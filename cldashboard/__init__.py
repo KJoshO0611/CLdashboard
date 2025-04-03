@@ -7,6 +7,7 @@ from flask_discord import DiscordOAuth2Session
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from datetime import timedelta
 from dotenv import load_dotenv
+from .config import Config
 
 # Load environment variables
 load_dotenv()
@@ -37,9 +38,10 @@ def fix_database_url(url):
     
     return url
 
-def create_app():
+def create_app(config_class=Config):
     """Create and configure the Flask application"""
     app = Flask(__name__)
+    app.config.from_object(config_class)
     
     # Flask configuration
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY") or "dev-secret-key-change-in-production"
@@ -100,5 +102,15 @@ def create_app():
     # Create database tables if they don't exist
     with app.app_context():
         db.create_all()
+    
+    # Configure error handlers
+    @app.errorhandler(404)
+    def not_found_error(error):
+        return render_template('errors/404.html'), 404
+    
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()  # Roll back db session in case of errors
+        return render_template('errors/500.html'), 500
     
     return app 
