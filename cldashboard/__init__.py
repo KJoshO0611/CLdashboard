@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_session import Session
@@ -8,6 +8,8 @@ from flask_wtf.csrf import CSRFProtect, generate_csrf
 from datetime import timedelta
 from dotenv import load_dotenv
 from .config import Config
+import logging
+from logging.handlers import RotatingFileHandler
 
 # Load environment variables
 load_dotenv()
@@ -86,6 +88,19 @@ def create_app(config_class=Config):
     def inject_csrf_token():
         return dict(csrf_token=generate_csrf)
     
+    # Configure logging
+    if not app.debug and not app.testing:
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
+        file_handler = RotatingFileHandler('logs/cldashboard.log', maxBytes=10240, backupCount=10)
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        ))
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+        app.logger.setLevel(logging.INFO)
+        app.logger.info('CLDashboard startup')
+    
     # Register blueprints
     from cldashboard.routes.main import main
     from cldashboard.routes.auth import auth
@@ -99,9 +114,13 @@ def create_app(config_class=Config):
     app.register_blueprint(admin)
     app.register_blueprint(api)
     
-    # Create database tables if they don't exist
+    # Create database tables
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+        except Exception as e:
+            app.logger.error(f'Database initialization error: {str(e)}')
+            # Don't raise the error, allow the app to start even if tables exist
     
     # Configure error handlers
     @app.errorhandler(404)
@@ -111,6 +130,31 @@ def create_app(config_class=Config):
     @app.errorhandler(500)
     def internal_error(error):
         db.session.rollback()  # Roll back db session in case of errors
+        app.logger.error(f'Internal server error: {str(error)}')
         return render_template('errors/500.html'), 500
+    
+    @app.errorhandler(502)
+    def bad_gateway_error(error):
+        app.logger.error(f'Bad gateway error: {str(error)}')
+        return render_template('errors/502.html'), 502
+    
+    @app.before_request
+    def before_request():
+        try:
+            # Test database connection
+            db.session.execute('SELECT 1')
+        except Exception as e:
+            app.logger.error(f'Database connection error: {str(e)}')
+            db.session.rollback()
+            # Don't raise the error, let the request continue
+    
+    @app.after_request
+    def after_request(response):
+        try:
+            db.session.commit()
+        except Exception as e:
+            app.logger.error(f'Database commit error: {str(e)}')
+            db.session.rollback()
+        return response
     
     return app 
