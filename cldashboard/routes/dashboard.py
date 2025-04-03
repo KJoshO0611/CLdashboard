@@ -51,7 +51,8 @@ def guild_leaderboard(guild_id):
         return redirect(url_for('dashboard.guild_list'))
     
     # Get leaderboard data from API
-    response = requests.get(f"{request.host_url}api/guilds/{guild_id}/leaderboard")
+    response = requests.get(f"{request.host_url}api/guilds/{guild_id}/leaderboard", 
+                            cookies=request.cookies)
     if response.status_code == 200:
         leaderboard_data = response.json()['data']
     else:
@@ -75,7 +76,8 @@ def guild_achievements(guild_id):
         return redirect(url_for('dashboard.guild_list'))
     
     # Get achievements data from API
-    response = requests.get(f"{request.host_url}api/guilds/{guild_id}/achievements")
+    response = requests.get(f"{request.host_url}api/guilds/{guild_id}/achievements",
+                           cookies=request.cookies)
     if response.status_code == 200:
         achievements_data = response.json()['data']
     else:
@@ -99,7 +101,8 @@ def guild_events(guild_id):
         return redirect(url_for('dashboard.guild_list'))
     
     # Get events data from API
-    response = requests.get(f"{request.host_url}api/guilds/{guild_id}/events")
+    response = requests.get(f"{request.host_url}api/guilds/{guild_id}/events",
+                           cookies=request.cookies)
     if response.status_code == 200:
         events_data = response.json()['data']
     else:
