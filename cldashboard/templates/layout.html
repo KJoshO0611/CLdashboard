@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Discord Bot Dashboard</title>
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon/favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='favicon/site.webmanifest') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block extra_css %}{% endblock %}
+    <style>
+        :root {
+            --primary: #ff6666;        /* Light Red */
+            --secondary: #00cccc;      /* Cyan */
+            --dark-blue: #0066cc;      /* Dark Blue */
+            --purple: #6633cc;         /* Purple */
+            --text-light: #ffffff;     /* White */
+            --text-dark: #333333;      /* Dark Gray */
+            --bg-light: #f8f9fa;       /* Light Background */
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--dark-blue);">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.home') }}">
+                <i class="fas fa-robot me-2"></i>Bot Dashboard
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.home') }}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.features') }}">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.about') }}">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.contact') }}">Contact</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                {% if current_user.avatar %}
+                                    <img src="{{ current_user.avatar }}" alt="{{ current_user.username }}" 
+                                         class="rounded-circle me-1" style="width: 24px; height: 24px;">
+                                {% else %}
+                                    <i class="fas fa-user me-1"></i>
+                                {% endif %}
+                                {{ current_user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('dashboard.profile') }}">My Profile</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('dashboard.guild_list') }}">My Servers</a></li>
+                                {% if current_user.is_admin %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.index') }}">Admin Panel</a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-outline-light" href="{{ url_for('auth.login') }}">
+                                <i class="fab fa-discord me-1"></i>Login with Discord
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="container py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3 text-center" style="background-color: var(--dark-blue); color: var(--text-light);">
+        <div class="container">
+            <span>&copy; 2023 Discord Bot Dashboard. All rights reserved.</span>
+            <div class="mt-2">
+                <a href="#" class="text-light me-2"><i class="fab fa-discord"></i></a>
+                <a href="#" class="text-light me-2"><i class="fab fa-github"></i></a>
+                <a href="#" class="text-light me-2"><i class="fab fa-twitter"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

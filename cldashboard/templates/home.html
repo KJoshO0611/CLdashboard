@@ -1,0 +1,113 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="row align-items-center py-5">
+    <div class="col-md-6">
+        <h1 class="display-4 fw-bold mb-4">Level Up Your Discord Experience</h1>
+        <p class="lead mb-4">A powerful Discord bot dashboard with server management, leveling system, and customizable features.</p>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-4 me-md-2">
+                <i class="fab fa-discord me-2"></i>Login with Discord
+            </a>
+            <a href="{{ url_for('main.features') }}" class="btn btn-outline-secondary btn-lg px-4">
+                <i class="fas fa-list-check me-2"></i>See Features
+            </a>
+        </div>
+    </div>
+    <div class="col-md-6 text-center mt-4 mt-md-0">
+        <img src="{{ url_for('static', filename='img/hero-image.svg') }}" alt="Discord Bot Dashboard" class="img-fluid" style="max-height: 400px;">
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row mt-5 pt-5">
+    <div class="col-12 text-center mb-5">
+        <h2 class="display-5 fw-bold text-dark-blue">Key Features</h2>
+        <p class="lead">Everything you need to enhance your Discord server experience</p>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center py-4">
+                <div class="rounded-circle bg-primary-custom p-3 d-inline-flex mb-3" style="width: 70px; height: 70px;">
+                    <i class="fas fa-chart-line m-auto text-white fs-3"></i>
+                </div>
+                <h3 class="card-title h4">Leveling System</h3>
+                <p class="card-text">Track user activity, award XP, and customize level-up rewards with an intuitive interface.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center py-4">
+                <div class="rounded-circle bg-secondary-custom p-3 d-inline-flex mb-3" style="width: 70px; height: 70px;">
+                    <i class="fas fa-trophy m-auto text-white fs-3"></i>
+                </div>
+                <h3 class="card-title h4">Custom Achievements</h3>
+                <p class="card-text">Create and manage custom achievements to reward your community members.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center py-4">
+                <div class="rounded-circle bg-dark-blue p-3 d-inline-flex mb-3" style="width: 70px; height: 70px;">
+                    <i class="fas fa-user-shield m-auto text-white fs-3"></i>
+                </div>
+                <h3 class="card-title h4">Role-Based Access</h3>
+                <p class="card-text">Different permission levels for bot owners, server admins, moderators, and users.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center py-4">
+                <div class="rounded-circle bg-purple p-3 d-inline-flex mb-3" style="width: 70px; height: 70px;">
+                    <i class="fas fa-calendar-check m-auto text-white fs-3"></i>
+                </div>
+                <h3 class="card-title h4">Server Events</h3>
+                <p class="card-text">Schedule and manage events with automatic notifications to keep your community engaged.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center py-4">
+                <div class="rounded-circle bg-primary-custom p-3 d-inline-flex mb-3" style="width: 70px; height: 70px;">
+                    <i class="fas fa-cog m-auto text-white fs-3"></i>
+                </div>
+                <h3 class="card-title h4">Custom Settings</h3>
+                <p class="card-text">Tailor the bot's behavior to your server's needs with extensive customization options.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center py-4">
+                <div class="rounded-circle bg-secondary-custom p-3 d-inline-flex mb-3" style="width: 70px; height: 70px;">
+                    <i class="fas fa-shield-alt m-auto text-white fs-3"></i>
+                </div>
+                <h3 class="card-title h4">Secure Dashboard</h3>
+                <p class="card-text">Manage your Discord server securely with Discord OAuth integration and role-based access control.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+<div class="row mt-5 py-5">
+    <div class="col-12 text-center">
+        <h2 class="display-6 fw-bold">Ready to Level Up Your Discord Server?</h2>
+        <p class="lead mb-4">Join thousands of servers using our bot to enhance their community experience.</p>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-purple btn-lg px-5 py-3 rounded-pill">
+            <i class="fab fa-discord me-2"></i>Get Started
+        </a>
+    </div>
+</div>
+{% endblock %} 

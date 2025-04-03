@@ -1,0 +1,254 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="mb-0">Dashboard</h1>
+        <p class="text-muted">Welcome back, {{ current_user.username }}!</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- User stats cards -->
+    <div class="col-md-3 mb-4">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="icon">
+                    <i class="fas fa-server"></i>
+                </div>
+                <div class="number" id="servers-count">{{ current_user.guilds|length }}</div>
+                <div class="text">Servers</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="number" id="total-xp">-</div>
+                <div class="text">Total XP</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="number" id="achievements-count">-</div>
+                <div class="text">Achievements</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="number" id="events-count">-</div>
+                <div class="text">Upcoming Events</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent activity -->
+    <div class="col-lg-8 mb-4">
+        <div class="card card-dark-blue mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Activity Overview</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="activity-chart" height="250"></canvas>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-primary-custom text-white">
+                <h5 class="card-title mb-0">Your Servers</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for guild in current_user.guilds[:5] %}
+                    <a href="{{ url_for('dashboard.guild_overview', guild_id=guild.guild_id) }}" class="list-group-item list-group-item-action d-flex align-items-center">
+                        {% if guild.icon %}
+                        <img src="{{ guild.icon }}" alt="{{ guild.name }}" class="rounded-circle me-3" style="width: 48px; height: 48px;">
+                        {% else %}
+                        <div class="rounded-circle bg-secondary text-white me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                            <span>{{ guild.name[:1] }}</span>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-0">{{ guild.name }}</h6>
+                            <small class="text-muted">Member Count: Loading...</small>
+                        </div>
+                        <i class="fas fa-chevron-right ms-auto"></i>
+                    </a>
+                    {% else %}
+                    <div class="list-group-item text-center text-muted py-4">
+                        <p>No servers found</p>
+                        <a href="https://discord.com/api/oauth2/authorize?client_id={{ config.DISCORD_CLIENT_ID }}&permissions=8&scope=bot" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-2"></i>Add to Server
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if current_user.guilds|length > 5 %}
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('dashboard.guild_list') }}" class="btn btn-sm btn-outline-primary">View All Servers</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header bg-purple text-white">
+                <h5 class="card-title mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('dashboard.guild_list') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-server me-2"></i>Manage Servers
+                    </a>
+                    <a href="{{ url_for('dashboard.profile') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-user-cog me-2"></i>Edit Profile
+                    </a>
+                    <a href="https://discord.com/api/oauth2/authorize?client_id={{ config.DISCORD_CLIENT_ID }}&permissions=8&scope=bot" class="btn btn-outline-dark-blue">
+                        <i class="fas fa-plus me-2"></i>Add Bot to Server
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-secondary-custom text-white">
+                <h5 class="card-title mb-0">Recent Achievements</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush" id="recent-achievements">
+                    <div class="list-group-item text-center text-muted py-4">
+                        <i class="fas fa-spinner fa-spin mb-3 fs-4"></i>
+                        <p>Loading achievements...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch user stats
+    API.get('/api/users/me/stats', function(data) {
+        document.getElementById('total-xp').textContent = data.total_xp.toLocaleString();
+        document.getElementById('achievements-count').textContent = data.achievements;
+        document.getElementById('events-count').textContent = '0'; // Placeholder
+    }, function(error) {
+        console.error('Error loading user stats:', error);
+    });
+    
+    // Activity chart (placeholder data)
+    const activityCtx = document.getElementById('activity-chart').getContext('2d');
+    const activityData = {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+        datasets: [
+            {
+                label: 'XP Gained',
+                data: [1200, 1900, 1500, 2200],
+                backgroundColor: 'rgba(255, 102, 102, 0.2)',
+                borderColor: 'rgba(255, 102, 102, 1)',
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Messages Sent',
+                data: [200, 350, 250, 400],
+                backgroundColor: 'rgba(0, 204, 204, 0.2)',
+                borderColor: 'rgba(0, 204, 204, 1)',
+                tension: 0.4,
+                fill: true
+            }
+        ]
+    };
+    
+    new Chart(activityCtx, {
+        type: 'line',
+        data: activityData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Mock recent achievements (placeholder)
+    setTimeout(function() {
+        const achievementsHtml = `
+            <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle bg-primary-custom text-white p-2 me-3">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">Active Member</h6>
+                        <small class="text-muted">Send 100 messages</small>
+                    </div>
+                    <span class="badge bg-success ms-auto">New</span>
+                </div>
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle bg-secondary-custom text-white p-2 me-3">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">Rising Star</h6>
+                        <small class="text-muted">Reach level 10</small>
+                    </div>
+                </div>
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle bg-purple text-white p-2 me-3">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">Event Participant</h6>
+                        <small class="text-muted">Join 5 server events</small>
+                    </div>
+                </div>
+            </a>
+        `;
+        
+        document.getElementById('recent-achievements').innerHTML = achievementsHtml;
+    }, 1500);
+});
+</script>
+{% endblock %} 

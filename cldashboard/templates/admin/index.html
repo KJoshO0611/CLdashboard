@@ -1,0 +1,468 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="mb-0">Admin Dashboard</h1>
+        <p class="text-muted">Manage your Discord bot and monitor its performance</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Admin stats cards -->
+    <div class="col-md-3 mb-4">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="number" id="users-count">-</div>
+                <div class="text">Total Users</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="icon">
+                    <i class="fas fa-server"></i>
+                </div>
+                <div class="number" id="guilds-count">-</div>
+                <div class="text">Total Servers</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="number" id="messages-count">-</div>
+                <div class="text">Messages Processed</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="number" id="uptime">-</div>
+                <div class="text">Days Uptime</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main content -->
+    <div class="col-lg-8 mb-4">
+        <div class="card card-dark-blue mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Bot Growth</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="growth-chart" height="250"></canvas>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card card-purple">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Server Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="server-distribution" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Command Usage</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="command-usage" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-secondary-custom text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Errors</h5>
+                <button class="btn btn-sm btn-light" id="refresh-errors">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Error Type</th>
+                                <th>Server</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="errors-table">
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>Loading errors...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header bg-dark-blue text-white">
+                <h5 class="card-title mb-0">Admin Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-users-cog me-2"></i>Manage Users
+                    </a>
+                    <a href="{{ url_for('admin.guilds') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-server me-2"></i>Manage Servers
+                    </a>
+                    <a href="{{ url_for('admin.settings') }}" class="btn btn-outline-dark-blue">
+                        <i class="fas fa-cogs me-2"></i>Bot Settings
+                    </a>
+                    <button class="btn btn-outline-danger" id="restart-bot">
+                        <i class="fas fa-power-off me-2"></i>Restart Bot
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-primary-custom text-white">
+                <h5 class="card-title mb-0">System Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="text-muted d-block">CPU Usage</label>
+                    <div class="progress">
+                        <div class="progress-bar bg-primary-custom" role="progressbar" style="width: 0%" id="cpu-usage">0%</div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted d-block">Memory Usage</label>
+                    <div class="progress">
+                        <div class="progress-bar bg-secondary-custom" role="progressbar" style="width: 0%" id="memory-usage">0%</div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted d-block">Disk Usage</label>
+                    <div class="progress">
+                        <div class="progress-bar bg-purple" role="progressbar" style="width: 0%" id="disk-usage">0%</div>
+                    </div>
+                </div>
+                <div class="text-center mt-4">
+                    <span class="badge bg-success p-2" id="status-badge">
+                        <i class="fas fa-check-circle me-1"></i>All Systems Operational
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-purple text-white">
+                <h5 class="card-title mb-0">Top Servers</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush" id="top-servers">
+                    <div class="list-group-item text-center text-muted py-4">
+                        <i class="fas fa-spinner fa-spin mb-3 fs-4"></i>
+                        <p>Loading servers...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch admin stats
+    API.get('/api/admin/stats', function(data) {
+        document.getElementById('users-count').textContent = data.total_users.toLocaleString();
+        document.getElementById('guilds-count').textContent = data.total_guilds.toLocaleString();
+        document.getElementById('messages-count').textContent = data.total_messages_processed.toLocaleString();
+        document.getElementById('uptime').textContent = data.uptime_days;
+        
+        // Update system status (mock data)
+        updateSystemStatus();
+        
+        // Show top servers (mock data)
+        showTopServers();
+        
+        // Show recent errors (mock data)
+        showRecentErrors();
+        
+        // Initialize charts
+        initCharts();
+    }, function(error) {
+        console.error('Error loading admin stats:', error);
+        showNotification('Failed to load admin stats: ' + error, 'danger');
+    });
+    
+    // Restart bot button
+    document.getElementById('restart-bot').addEventListener('click', function() {
+        if (confirm('Are you sure you want to restart the bot? This may cause temporary disruption to services.')) {
+            showNotification('Bot restart initiated. This may take a few minutes.', 'warning');
+        }
+    });
+    
+    // Refresh errors button
+    document.getElementById('refresh-errors').addEventListener('click', function() {
+        showNotification('Refreshing error logs...', 'info');
+        showRecentErrors();
+    });
+});
+
+function updateSystemStatus() {
+    // Mock system status data
+    const cpuUsage = Math.floor(Math.random() * 60) + 10;
+    const memoryUsage = Math.floor(Math.random() * 50) + 20;
+    const diskUsage = Math.floor(Math.random() * 30) + 40;
+    
+    document.getElementById('cpu-usage').style.width = cpuUsage + '%';
+    document.getElementById('cpu-usage').textContent = cpuUsage + '%';
+    
+    document.getElementById('memory-usage').style.width = memoryUsage + '%';
+    document.getElementById('memory-usage').textContent = memoryUsage + '%';
+    
+    document.getElementById('disk-usage').style.width = diskUsage + '%';
+    document.getElementById('disk-usage').textContent = diskUsage + '%';
+    
+    // Update status badge based on usage
+    const statusBadge = document.getElementById('status-badge');
+    if (cpuUsage > 80 || memoryUsage > 80) {
+        statusBadge.className = 'badge bg-danger p-2';
+        statusBadge.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>System Under Load';
+    } else if (cpuUsage > 60 || memoryUsage > 60) {
+        statusBadge.className = 'badge bg-warning p-2';
+        statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>High Resource Usage';
+    }
+}
+
+function showTopServers() {
+    // Mock top servers data
+    const serversHtml = `
+        <a href="#" class="list-group-item list-group-item-action">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-secondary text-white p-2 me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <span>G</span>
+                </div>
+                <div>
+                    <h6 class="mb-0">Gaming Community</h6>
+                    <small class="text-muted">5,231 members</small>
+                </div>
+                <span class="badge bg-primary-custom ms-auto">Active</span>
+            </div>
+        </a>
+        <a href="#" class="list-group-item list-group-item-action">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-secondary text-white p-2 me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <span>C</span>
+                </div>
+                <div>
+                    <h6 class="mb-0">Coding Hub</h6>
+                    <small class="text-muted">3,842 members</small>
+                </div>
+                <span class="badge bg-primary-custom ms-auto">Active</span>
+            </div>
+        </a>
+        <a href="#" class="list-group-item list-group-item-action">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-secondary text-white p-2 me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <span>A</span>
+                </div>
+                <div>
+                    <h6 class="mb-0">Anime Fans</h6>
+                    <small class="text-muted">2,910 members</small>
+                </div>
+                <span class="badge bg-primary-custom ms-auto">Active</span>
+            </div>
+        </a>
+    `;
+    
+    document.getElementById('top-servers').innerHTML = serversHtml;
+}
+
+function showRecentErrors() {
+    // Mock error data
+    setTimeout(function() {
+        const errorsHtml = `
+            <tr>
+                <td>3 mins ago</td>
+                <td>API Rate Limit</td>
+                <td>Gaming Community</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary">View</button>
+                </td>
+            </tr>
+            <tr>
+                <td>25 mins ago</td>
+                <td>Database Connection</td>
+                <td>Coding Hub</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary">View</button>
+                </td>
+            </tr>
+            <tr>
+                <td>1 hour ago</td>
+                <td>Command Execution</td>
+                <td>Anime Fans</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary">View</button>
+                </td>
+            </tr>
+        `;
+        
+        document.getElementById('errors-table').innerHTML = errorsHtml;
+    }, 1000);
+}
+
+function initCharts() {
+    // Bot growth chart
+    const growthCtx = document.getElementById('growth-chart').getContext('2d');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    
+    new Chart(growthCtx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [
+                {
+                    label: 'Users',
+                    data: [400, 600, 900, 1300, 1600, 2000],
+                    borderColor: 'rgba(255, 102, 102, 1)',
+                    backgroundColor: 'rgba(255, 102, 102, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Servers',
+                    data: [25, 40, 60, 80, 90, 120],
+                    borderColor: 'rgba(0, 204, 204, 1)',
+                    backgroundColor: 'rgba(0, 204, 204, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Server distribution chart
+    const distributionCtx = document.getElementById('server-distribution').getContext('2d');
+    
+    new Chart(distributionCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Small (< 100)', 'Medium (100-1000)', 'Large (> 1000)'],
+            datasets: [{
+                data: [35, 45, 20],
+                backgroundColor: [
+                    'rgba(255, 102, 102, 0.8)',
+                    'rgba(0, 204, 204, 0.8)',
+                    'rgba(102, 51, 204, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(255, 102, 102, 1)',
+                    'rgba(0, 204, 204, 1)',
+                    'rgba(102, 51, 204, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+    
+    // Command usage chart
+    const commandCtx = document.getElementById('command-usage').getContext('2d');
+    
+    new Chart(commandCtx, {
+        type: 'bar',
+        data: {
+            labels: ['!rank', '!leaderboard', '!help', '!profile', '!stats'],
+            datasets: [{
+                label: 'Usage Count',
+                data: [4200, 3500, 2800, 2200, 1900],
+                backgroundColor: [
+                    'rgba(255, 102, 102, 0.8)',
+                    'rgba(0, 204, 204, 0.8)',
+                    'rgba(102, 51, 204, 0.8)',
+                    'rgba(0, 102, 204, 0.8)',
+                    'rgba(255, 153, 0, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(255, 102, 102, 1)',
+                    'rgba(0, 204, 204, 1)',
+                    'rgba(102, 51, 204, 1)',
+                    'rgba(0, 102, 204, 1)',
+                    'rgba(255, 153, 0, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %} 

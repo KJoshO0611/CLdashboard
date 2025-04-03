@@ -1,0 +1,225 @@
+/* Main CSS Styles */
+
+body {
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
+}
+
+/* Custom Button Styles */
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: #ff4d4d;
+    border-color: #ff4d4d;
+}
+
+.btn-secondary {
+    background-color: var(--secondary);
+    border-color: var(--secondary);
+}
+
+.btn-secondary:hover, .btn-secondary:focus {
+    background-color: #00b3b3;
+    border-color: #00b3b3;
+}
+
+.btn-dark-blue {
+    background-color: var(--dark-blue);
+    border-color: var(--dark-blue);
+    color: white;
+}
+
+.btn-dark-blue:hover, .btn-dark-blue:focus {
+    background-color: #0055aa;
+    border-color: #0055aa;
+    color: white;
+}
+
+.btn-purple {
+    background-color: var(--purple);
+    border-color: var(--purple);
+    color: white;
+}
+
+.btn-purple:hover, .btn-purple:focus {
+    background-color: #5522aa;
+    border-color: #5522aa;
+    color: white;
+}
+
+/* Card Styles */
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    margin-bottom: 20px;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    border-top-left-radius: 10px !important;
+    border-top-right-radius: 10px !important;
+}
+
+.card-primary .card-header {
+    background-color: var(--primary);
+    color: white;
+}
+
+.card-secondary .card-header {
+    background-color: var(--secondary);
+    color: white;
+}
+
+.card-dark-blue .card-header {
+    background-color: var(--dark-blue);
+    color: white;
+}
+
+.card-purple .card-header {
+    background-color: var(--purple);
+    color: white;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.sidebar .nav-link {
+    color: var(--text-dark);
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    transition: all 0.3s;
+}
+
+.sidebar .nav-link:hover {
+    background-color: var(--bg-light);
+}
+
+.sidebar .nav-link.active {
+    background-color: var(--primary);
+    color: white;
+}
+
+.sidebar .nav-link i {
+    margin-right: 10px;
+}
+
+/* Stats Card */
+.stats-card {
+    text-align: center;
+    padding: 20px;
+}
+
+.stats-card .icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    color: var(--primary);
+}
+
+.stats-card .number {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.stats-card .text {
+    color: #666;
+}
+
+/* Guild Card */
+.guild-card {
+    text-align: center;
+    padding: 20px;
+}
+
+.guild-card .guild-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 15px;
+}
+
+.guild-card .guild-name {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* Utility Classes */
+.text-primary-custom {
+    color: var(--primary) !important;
+}
+
+.text-secondary-custom {
+    color: var(--secondary) !important;
+}
+
+.text-dark-blue {
+    color: var(--dark-blue) !important;
+}
+
+.text-purple {
+    color: var(--purple) !important;
+}
+
+.bg-primary-custom {
+    background-color: var(--primary) !important;
+}
+
+.bg-secondary-custom {
+    background-color: var(--secondary) !important;
+}
+
+.bg-dark-blue {
+    background-color: var(--dark-blue) !important;
+}
+
+.bg-purple {
+    background-color: var(--purple) !important;
+}
+
+/* Dashboard Page Layouts */
+.dashboard-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.dashboard-sidebar {
+    flex: 0 0 250px;
+}
+
+.dashboard-content {
+    flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        flex-direction: column;
+    }
+    
+    .dashboard-sidebar, .dashboard-content {
+        flex: auto;
+        width: 100%;
+    }
+} 
