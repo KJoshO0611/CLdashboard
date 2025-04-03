@@ -23,7 +23,16 @@ def login():
         prompt='consent'
     )
     
-    # Return the URL directly instead of the Response object
+    # Extract URL if a Response object is returned
+    if isinstance(auth_url, Response):
+        # If it's a redirect response, extract the Location header
+        if auth_url.status_code == 302 and 'Location' in auth_url.headers:
+            auth_url = auth_url.headers['Location']
+        # If it's not a redirect or doesn't have Location, use the string value
+        else:
+            auth_url = str(auth_url.get_data(as_text=True))
+    
+    # Now auth_url should be a string URL
     return redirect(auth_url)
 
 @auth.route('/logout')
