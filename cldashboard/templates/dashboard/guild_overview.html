@@ -39,7 +39,10 @@
         <div class="card">
             <div class="card-body">
                 <h6 class="card-subtitle mb-2 text-muted">Total Members</h6>
-                <h3 class="card-title mb-0" id="member-count">Loading...</h3>
+                <h3 class="card-title mb-0" id="member-count">
+                    <span class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></span>
+                    Loading...
+                </h3>
             </div>
         </div>
     </div>
@@ -47,7 +50,10 @@
         <div class="card">
             <div class="card-body">
                 <h6 class="card-subtitle mb-2 text-muted">Active Users</h6>
-                <h3 class="card-title mb-0" id="active-users">Loading...</h3>
+                <h3 class="card-title mb-0" id="active-users">
+                    <span class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></span>
+                    Loading...
+                </h3>
             </div>
         </div>
     </div>
@@ -55,7 +61,10 @@
         <div class="card">
             <div class="card-body">
                 <h6 class="card-subtitle mb-2 text-muted">Total XP</h6>
-                <h3 class="card-title mb-0" id="total-xp">Loading...</h3>
+                <h3 class="card-title mb-0" id="total-xp">
+                    <span class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></span>
+                    Loading...
+                </h3>
             </div>
         </div>
     </div>
@@ -63,7 +72,10 @@
         <div class="card">
             <div class="card-body">
                 <h6 class="card-subtitle mb-2 text-muted">Levels Earned</h6>
-                <h3 class="card-title mb-0" id="total-levels">Loading...</h3>
+                <h3 class="card-title mb-0" id="total-levels">
+                    <span class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></span>
+                    Loading...
+                </h3>
             </div>
         </div>
     </div>
@@ -78,7 +90,9 @@
                 <h5 class="card-title mb-0">Server Activity</h5>
             </div>
             <div class="card-body">
-                <canvas id="activity-chart" height="300"></canvas>
+                <div id="chart-container" style="position: relative; height:300px;">
+                    <canvas id="activity-chart"></canvas>
+                </div>
             </div>
         </div>
         
@@ -91,7 +105,10 @@
                 <div class="list-group list-group-flush" id="recent-activity">
                     <div class="list-group-item">
                         <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1">Loading activity...</h6>
+                            <h6 class="mb-1">
+                                <span class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></span>
+                                Loading activity...
+                            </h6>
                         </div>
                     </div>
                 </div>
@@ -129,16 +146,28 @@
             <div class="card-body">
                 <dl class="row mb-0">
                     <dt class="col-sm-4">Owner</dt>
-                    <dd class="col-sm-8" id="server-owner">Loading...</dd>
+                    <dd class="col-sm-8" id="server-owner">
+                        <span class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></span>
+                        Loading...
+                    </dd>
                     
                     <dt class="col-sm-4">Created</dt>
-                    <dd class="col-sm-8" id="server-created">Loading...</dd>
+                    <dd class="col-sm-8" id="server-created">
+                        <span class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></span>
+                        Loading...
+                    </dd>
                     
                     <dt class="col-sm-4">Region</dt>
-                    <dd class="col-sm-8" id="server-region">Loading...</dd>
+                    <dd class="col-sm-8" id="server-region">
+                        <span class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></span>
+                        Loading...
+                    </dd>
                     
                     <dt class="col-sm-4">Channels</dt>
-                    <dd class="col-sm-8" id="server-channels">Loading...</dd>
+                    <dd class="col-sm-8" id="server-channels">
+                        <span class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></span>
+                        Loading...
+                    </dd>
                 </dl>
             </div>
         </div>
@@ -149,9 +178,44 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Helper function to format numbers with commas
+    function formatNumber(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    // Helper function to format time ago
+    function timeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+        
+        let interval = Math.floor(seconds / 31536000);
+        if (interval > 1) return interval + " years ago";
+        
+        interval = Math.floor(seconds / 2592000);
+        if (interval > 1) return interval + " months ago";
+        
+        interval = Math.floor(seconds / 86400);
+        if (interval > 1) return interval + " days ago";
+        
+        interval = Math.floor(seconds / 3600);
+        if (interval > 1) return interval + " hours ago";
+        
+        interval = Math.floor(seconds / 60);
+        if (interval > 1) return interval + " minutes ago";
+        
+        return "just now";
+    }
+
+    // Helper function to handle API errors
+    function handleApiError(element, error) {
+        element.innerHTML = `<span class="text-danger">Error loading data</span>`;
+        console.error('API Error:', error);
+    }
+
     // Initialize activity chart
     const ctx = document.getElementById('activity-chart').getContext('2d');
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -183,13 +247,20 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                document.getElementById('member-count').textContent = data.data.member_count;
-                document.getElementById('active-users').textContent = data.data.active_users;
-                document.getElementById('total-xp').textContent = data.data.total_xp;
-                document.getElementById('total-levels').textContent = data.data.total_levels;
+                document.getElementById('member-count').textContent = formatNumber(data.data.member_count);
+                document.getElementById('active-users').textContent = formatNumber(data.data.active_users);
+                document.getElementById('total-xp').textContent = formatNumber(data.data.total_xp);
+                document.getElementById('total-levels').textContent = formatNumber(data.data.total_levels);
+            } else {
+                throw new Error(data.message);
             }
         })
-        .catch(error => console.error('Error fetching server stats:', error));
+        .catch(error => {
+            handleApiError(document.getElementById('member-count'), error);
+            handleApiError(document.getElementById('active-users'), error);
+            handleApiError(document.getElementById('total-xp'), error);
+            handleApiError(document.getElementById('total-levels'), error);
+        });
     
     // Fetch server info
     fetch(`/api/guilds/{{ guild.guild_id }}/info`)
@@ -197,12 +268,19 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 document.getElementById('server-owner').textContent = data.data.owner;
-                document.getElementById('server-created').textContent = new Date(data.data.created_at).toLocaleDateString();
+                document.getElementById('server-created').textContent = data.data.created_at ? timeAgo(data.data.created_at) : 'Unknown';
                 document.getElementById('server-region').textContent = data.data.region;
-                document.getElementById('server-channels').textContent = data.data.channels;
+                document.getElementById('server-channels').textContent = formatNumber(data.data.channels);
+            } else {
+                throw new Error(data.message);
             }
         })
-        .catch(error => console.error('Error fetching server info:', error));
+        .catch(error => {
+            handleApiError(document.getElementById('server-owner'), error);
+            handleApiError(document.getElementById('server-created'), error);
+            handleApiError(document.getElementById('server-region'), error);
+            handleApiError(document.getElementById('server-channels'), error);
+        });
     
     // Fetch recent activity
     fetch(`/api/guilds/{{ guild.guild_id }}/activity`)
@@ -210,18 +288,40 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 const activityList = document.getElementById('recent-activity');
-                activityList.innerHTML = data.data.map(activity => `
-                    <div class="list-group-item">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1">${activity.description}</h6>
-                            <small class="text-muted">${activity.time}</small>
+                if (data.data.length === 0) {
+                    activityList.innerHTML = `
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">No recent activity</h6>
+                            </div>
                         </div>
-                        ${activity.details ? `<p class="mb-1">${activity.details}</p>` : ''}
-                    </div>
-                `).join('');
+                    `;
+                } else {
+                    activityList.innerHTML = data.data.map(activity => `
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">${activity.description}</h6>
+                                <small class="text-muted">${activity.time}</small>
+                            </div>
+                            ${activity.details ? `<p class="mb-1">${activity.details}</p>` : ''}
+                        </div>
+                    `).join('');
+                }
+            } else {
+                throw new Error(data.message);
             }
         })
-        .catch(error => console.error('Error fetching recent activity:', error));
+        .catch(error => {
+            const activityList = document.getElementById('recent-activity');
+            activityList.innerHTML = `
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1 text-danger">Error loading activity</h6>
+                    </div>
+                </div>
+            `;
+            console.error('API Error:', error);
+        });
 });
 </script>
 {% endblock %} 

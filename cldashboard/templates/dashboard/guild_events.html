@@ -1,0 +1,306 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.guild_list') }}">Servers</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.guild_overview', guild_id=guild.guild_id) }}">{{ guild.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Events</li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                {% if guild.icon %}
+                <img src="{{ guild.icon }}" alt="{{ guild.name }}" class="rounded-circle me-3" style="width: 64px; height: 64px;">
+                {% else %}
+                <div class="rounded-circle bg-secondary text-white me-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                    <span class="fs-4">{{ guild.name[:1] }}</span>
+                </div>
+                {% endif %}
+                <div>
+                    <h1 class="mb-0">Events</h1>
+                    <small class="text-muted">{{ guild.name }}</small>
+                </div>
+            </div>
+            {% if current_user.can_manage_guild(guild.guild_id) %}
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal">
+                <i class="fas fa-plus me-2"></i>Create Event
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Event Filters -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Filters</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Status</label>
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn btn-outline-primary active" data-status="all">All</button>
+                            <button type="button" class="btn btn-outline-primary" data-status="upcoming">Upcoming</button>
+                            <button type="button" class="btn btn-outline-primary" data-status="ongoing">Ongoing</button>
+                            <button type="button" class="btn btn-outline-primary" data-status="past">Past</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Type</label>
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn btn-outline-primary active" data-type="all">All</button>
+                            <button type="button" class="btn btn-outline-primary" data-type="xp">XP Events</button>
+                            <button type="button" class="btn btn-outline-primary" data-type="leveling">Leveling</button>
+                            <button type="button" class="btn btn-outline-primary" data-type="achievement">Achievement</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Events List -->
+        <div id="events-list">
+            {% for event in events %}
+            <div class="card mb-4 event-card" data-status="{{ event.status }}" data-type="{{ event.type }}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="card-title mb-1">{{ event.name }}</h5>
+                            <div class="d-flex align-items-center text-muted">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                <span>{{ event.start_time|datetime }}</span>
+                                {% if event.end_time %}
+                                <span class="mx-2">-</span>
+                                <span>{{ event.end_time|datetime }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <span class="badge bg-{{ event.status_color }}">{{ event.status|title }}</span>
+                    </div>
+                    
+                    <p class="card-text">{{ event.description }}</p>
+                    
+                    {% if event.rewards %}
+                    <div class="mb-3">
+                        <h6 class="mb-2">Rewards</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for reward in event.rewards %}
+                            <span class="badge bg-success">{{ reward }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-users me-2"></i>
+                            <span>{{ event.participants|length }} participants</span>
+                        </div>
+                        {% if event.status == 'upcoming' %}
+                        <button class="btn btn-sm btn-outline-primary join-event-btn" data-event-id="{{ event.id }}">
+                            Join Event
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <div class="text-muted">
+                        <i class="fas fa-calendar fa-3x mb-3"></i>
+                        <h5>No Events Yet</h5>
+                        <p>Create events to engage your community!</p>
+                        {% if current_user.can_manage_guild(guild.guild_id) %}
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal">
+                            <i class="fas fa-plus me-2"></i>Create Event
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Event Modal -->
+{% if current_user.can_manage_guild(guild.guild_id) %}
+<div class="modal fade" id="addEventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addEventForm">
+                    <div class="mb-3">
+                        <label class="form-label">Event Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Event Type</label>
+                        <select class="form-select" name="type" required>
+                            <option value="xp">XP Event</option>
+                            <option value="leveling">Leveling Event</option>
+                            <option value="achievement">Achievement Event</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Time</label>
+                            <input type="datetime-local" class="form-control" name="start_time" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">End Time</label>
+                            <input type="datetime-local" class="form-control" name="end_time">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rewards</label>
+                        <input type="text" class="form-control" name="rewards" placeholder="e.g., 2x XP, Special Role">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveEvent">Create Event</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle status filtering
+    const statusButtons = document.querySelectorAll('[data-status]');
+    const eventCards = document.querySelectorAll('.event-card');
+    
+    statusButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Update active state
+            statusButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            const selectedStatus = this.dataset.status;
+            
+            // Filter events
+            eventCards.forEach(card => {
+                if (selectedStatus === 'all' || card.dataset.status === selectedStatus) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // Handle type filtering
+    const typeButtons = document.querySelectorAll('[data-type]');
+    
+    typeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Update active state
+            typeButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            const selectedType = this.dataset.type;
+            
+            // Filter events
+            eventCards.forEach(card => {
+                if (selectedType === 'all' || card.dataset.type === selectedType) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // Handle event form submission
+    const addEventForm = document.getElementById('addEventForm');
+    const saveEventBtn = document.getElementById('saveEvent');
+    
+    if (addEventForm && saveEventBtn) {
+        saveEventBtn.addEventListener('click', async function() {
+            const formData = new FormData(addEventForm);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch(`/api/guilds/{{ guild.guild_id }}/events`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Close modal and refresh page
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addEventModal'));
+                    modal.hide();
+                    location.reload();
+                } else {
+                    alert('Failed to create event: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error creating event:', error);
+                alert('An error occurred while creating the event');
+            }
+        });
+    }
+    
+    // Handle joining events
+    const joinButtons = document.querySelectorAll('.join-event-btn');
+    
+    joinButtons.forEach(button => {
+        button.addEventListener('click', async function() {
+            const eventId = this.dataset.eventId;
+            
+            try {
+                const response = await fetch(`/api/guilds/{{ guild.guild_id }}/events/${eventId}/join`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update button state
+                    this.disabled = true;
+                    this.textContent = 'Joined';
+                    this.classList.remove('btn-primary');
+                    this.classList.add('btn-success');
+                    
+                    // Update participant count
+                    const countElement = this.closest('.event-card').querySelector('.participant-count');
+                    const currentCount = parseInt(countElement.textContent);
+                    countElement.textContent = currentCount + 1;
+                } else {
+                    alert('Failed to join event: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error joining event:', error);
+                alert('An error occurred while joining the event');
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

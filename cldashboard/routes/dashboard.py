@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from cldashboard import db
 from cldashboard.models.user import Guild
 from cldashboard.middleware.auth import guild_view_required
+import requests
 
 dashboard = Blueprint('dashboard', __name__)
 
@@ -36,65 +37,74 @@ def profile():
     """User profile page"""
     return render_template('dashboard/profile.html', title='My Profile')
 
-@dashboard.route('/dashboard/guilds/<guild_id>/leaderboard')
+@dashboard.route('/guilds/<guild_id>/leaderboard')
 @login_required
-@guild_view_required
 def guild_leaderboard(guild_id):
-    """Leaderboard for a specific guild"""
+    """Display the leaderboard for a specific guild"""
+    if not current_user.can_view_guild(guild_id):
+        flash('You do not have permission to view this guild.', 'error')
+        return redirect(url_for('dashboard.guild_list'))
+    
     guild = Guild.query.filter_by(guild_id=guild_id).first()
-    
     if not guild:
-        abort(404)
+        flash('Guild not found.', 'error')
+        return redirect(url_for('dashboard.guild_list'))
     
-    # In a real implementation, you would fetch leaderboard data from the database
-    # This is a placeholder
-    leaderboard_data = []
+    # Get leaderboard data from API
+    response = requests.get(f"{request.host_url}api/guilds/{guild_id}/leaderboard")
+    if response.status_code == 200:
+        leaderboard_data = response.json()['data']
+    else:
+        leaderboard_data = []
     
-    return render_template(
-        'dashboard/guild_leaderboard.html', 
-        title=f'{guild.name} - Leaderboard', 
-        guild=guild,
-        leaderboard=leaderboard_data
-    )
+    return render_template('dashboard/guild_leaderboard.html', 
+                         guild=guild,
+                         leaderboard=leaderboard_data)
 
-@dashboard.route('/dashboard/guilds/<guild_id>/achievements')
+@dashboard.route('/guilds/<guild_id>/achievements')
 @login_required
-@guild_view_required
 def guild_achievements(guild_id):
-    """Achievements for a specific guild"""
+    """Display achievements for a specific guild"""
+    if not current_user.can_view_guild(guild_id):
+        flash('You do not have permission to view this guild.', 'error')
+        return redirect(url_for('dashboard.guild_list'))
+    
     guild = Guild.query.filter_by(guild_id=guild_id).first()
-    
     if not guild:
-        abort(404)
+        flash('Guild not found.', 'error')
+        return redirect(url_for('dashboard.guild_list'))
     
-    # In a real implementation, you would fetch achievement data from the database
-    # This is a placeholder
-    achievements_data = []
+    # Get achievements data from API
+    response = requests.get(f"{request.host_url}api/guilds/{guild_id}/achievements")
+    if response.status_code == 200:
+        achievements_data = response.json()['data']
+    else:
+        achievements_data = []
     
-    return render_template(
-        'dashboard/guild_achievements.html', 
-        title=f'{guild.name} - Achievements', 
-        guild=guild,
-        achievements=achievements_data
-    )
+    return render_template('dashboard/guild_achievements.html', 
+                         guild=guild,
+                         achievements=achievements_data)
 
-@dashboard.route('/dashboard/guilds/<guild_id>/events')
+@dashboard.route('/guilds/<guild_id>/events')
 @login_required
-@guild_view_required
 def guild_events(guild_id):
-    """Events for a specific guild"""
+    """Display events for a specific guild"""
+    if not current_user.can_view_guild(guild_id):
+        flash('You do not have permission to view this guild.', 'error')
+        return redirect(url_for('dashboard.guild_list'))
+    
     guild = Guild.query.filter_by(guild_id=guild_id).first()
-    
     if not guild:
-        abort(404)
+        flash('Guild not found.', 'error')
+        return redirect(url_for('dashboard.guild_list'))
     
-    # In a real implementation, you would fetch event data from the database
-    # This is a placeholder
-    events_data = []
+    # Get events data from API
+    response = requests.get(f"{request.host_url}api/guilds/{guild_id}/events")
+    if response.status_code == 200:
+        events_data = response.json()['data']
+    else:
+        events_data = []
     
-    return render_template(
-        'dashboard/guild_events.html', 
-        title=f'{guild.name} - Events', 
-        guild=guild,
-        events=events_data
-    ) 
+    return render_template('dashboard/guild_events.html', 
+                         guild=guild,
+                         events=events_data) 
