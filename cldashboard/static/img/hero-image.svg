@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5865F2" />
+      <stop offset="100%" stop-color="#2E3267" />
+    </linearGradient>
+    <linearGradient id="accent-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5865F2" />
+      <stop offset="100%" stop-color="#EB459E" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="400" fill="url(#bg-gradient)" />
+  
+  <!-- Decorative elements -->
+  <circle cx="100" cy="80" r="40" fill="rgba(255,255,255,0.1)" />
+  <circle cx="700" cy="320" r="60" fill="rgba(255,255,255,0.1)" />
+  <circle cx="400" cy="200" r="150" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="20" />
+  
+  <!-- Discord-style chat bubbles -->
+  <rect x="190" y="130" width="200" height="60" rx="15" fill="#36393F" />
+  <rect x="220" y="210" width="230" height="60" rx="15" fill="#36393F" />
+  <rect x="410" y="170" width="180" height="60" rx="15" fill="url(#accent-gradient)" />
+  
+  <!-- Level indicator -->
+  <circle cx="570" cy="110" r="50" fill="#36393F" stroke="#5865F2" stroke-width="5" />
+  <text x="570" y="122" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="bold" fill="white">LVL</text>
+  <text x="570" y="152" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#5865F2">10</text>
+  
+  <!-- Trophy icon -->
+  <path d="M290,80 h40 v10 h10 v40 h-10 v10 h-40 v-10 h-10 v-40 h10 z" fill="#FFC107" />
+  <rect x="300" y="140" width="20" height="15" fill="#FFC107" />
+  <rect x="295" y="155" width="30" height="5" fill="#FFC107" />
+  
+  <!-- Text elements -->
+  <text x="400" y="330" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">LEVEL UP YOUR DISCORD COMMUNITY</text>
+  <text x="400" y="360" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="white">Engage users · Track activity · Reward participation</text>
+</svg> 

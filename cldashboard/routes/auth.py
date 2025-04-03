@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, url_for, session, flash, request
+from flask import Blueprint, redirect, url_for, session, flash, request, Response
 from flask_login import login_user, logout_user, current_user, login_required
 from cldashboard import discord, db
 from cldashboard.models.user import User, Guild
@@ -23,6 +23,7 @@ def login():
         prompt='consent'
     )
     
+    # Return the URL directly instead of the Response object
     return redirect(auth_url)
 
 @auth.route('/logout')
@@ -98,6 +99,7 @@ def discord_callback():
             session.pop('next')
             return redirect(next_page)
         
+        # Ensure we're returning a string URL, not a Response object
         return redirect(url_for('dashboard.index'))
     
     except Exception as e:

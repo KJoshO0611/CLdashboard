@@ -1,0 +1,88 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row mb-5">
+    <div class="col-12 text-center">
+        <h1 class="display-4 fw-bold text-dark-blue">About Our Discord Bot</h1>
+        <p class="lead">Learn more about our mission and the team behind the Level Discord bot</p>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-primary-custom text-white">
+                <h2 class="h4 mb-0">Our Mission</h2>
+            </div>
+            <div class="card-body">
+                <p>Our mission is to help Discord communities grow and thrive by providing powerful tools that increase engagement and make server management easier.</p>
+                <p>We believe that by rewarding active participation and creating healthy competition through achievements and leveling, communities become more vibrant and enjoyable for everyone.</p>
+                <p>Every feature we develop is designed with both admins and regular users in mind, creating a balanced experience that benefits the entire community.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-secondary-custom text-white">
+                <h2 class="h4 mb-0">Why Choose Our Bot</h2>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><i class="fas fa-check-circle text-secondary-custom me-2"></i> <strong>User-Friendly</strong>: Intuitive dashboard and commands that are easy to use</li>
+                    <li class="list-group-item"><i class="fas fa-check-circle text-secondary-custom me-2"></i> <strong>Customizable</strong>: Extensive configuration options to match your server's needs</li>
+                    <li class="list-group-item"><i class="fas fa-check-circle text-secondary-custom me-2"></i> <strong>Reliable</strong>: Built with stability and performance in mind</li>
+                    <li class="list-group-item"><i class="fas fa-check-circle text-secondary-custom me-2"></i> <strong>Secure</strong>: Your data is protected with industry-standard security practices</li>
+                    <li class="list-group-item"><i class="fas fa-check-circle text-secondary-custom me-2"></i> <strong>Constantly Evolving</strong>: Regular updates with new features and improvements</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark-blue text-white">
+                <h2 class="h4 mb-0">Technical Highlights</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h3 class="h5 mb-3">Built With</h3>
+                        <ul class="list-group list-group-flush mb-4">
+                            <li class="list-group-item"><i class="fas fa-code text-dark-blue me-2"></i> Python with advanced asynchronous processing</li>
+                            <li class="list-group-item"><i class="fas fa-database text-dark-blue me-2"></i> PostgreSQL database for reliable data storage</li>
+                            <li class="list-group-item"><i class="fas fa-server text-dark-blue me-2"></i> Hosted on high-availability cloud infrastructure</li>
+                            <li class="list-group-item"><i class="fas fa-shield-alt text-dark-blue me-2"></i> Industry-standard security practices</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h3 class="h5 mb-3">Performance Stats</h3>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><i class="fas fa-bolt text-purple me-2"></i> 99.9% uptime reliability</li>
+                            <li class="list-group-item"><i class="fas fa-server text-purple me-2"></i> Serving thousands of Discord communities</li>
+                            <li class="list-group-item"><i class="fas fa-users text-purple me-2"></i> Millions of members tracked</li>
+                            <li class="list-group-item"><i class="fas fa-chart-line text-purple me-2"></i> Billions of XP points awarded</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 text-center">
+        <h2 class="h3 mb-4">Ready to enhance your Discord server?</h2>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-4 me-md-2">
+                <i class="fab fa-discord me-2"></i>Login with Discord
+            </a>
+            <a href="{{ url_for('main.features') }}" class="btn btn-outline-secondary btn-lg px-4">
+                <i class="fas fa-list-check me-2"></i>Explore Features
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

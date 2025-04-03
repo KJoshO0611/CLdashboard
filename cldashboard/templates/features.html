@@ -1,0 +1,265 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 fw-bold text-dark-blue">Level Bot Features</h1>
+            <p class="lead">Discover all the powerful features our Discord bot offers to enhance your server</p>
+        </div>
+    </div>
+
+    <!-- Core Features -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary-custom text-white">
+                    <h2 class="h3 mb-0">Core Leveling System</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6 mb-4 mb-md-0">
+                            <h3 class="h5 mb-3">Engage your community with a powerful leveling system</h3>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Activity tracking</strong> - Members earn XP by chatting, using voice channels, and participating in server events
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Customizable XP rates</strong> - Set different XP values for various activities
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Level-up notifications</strong> - Choose how and where to announce level-ups
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Leaderboards</strong> - Show top users and encourage friendly competition
+                                </li>
+                                <li>
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Channel-specific settings</strong> - Disable or modify XP in specific channels
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="rounded bg-light p-3 text-center">
+                                <div class="py-4 px-3 bg-dark rounded mb-3">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="me-3">
+                                            <div class="bg-primary rounded-circle" style="width: 48px; height: 48px"></div>
+                                        </div>
+                                        <div class="text-start">
+                                            <p class="text-white mb-0">UserName#1234</p>
+                                            <div class="progress" style="height: 10px; width: 150px;">
+                                                <div class="progress-bar bg-primary" style="width: 75%"></div>
+                                            </div>
+                                            <p class="text-white-50 mb-0"><small>Level 15 • 2,345/3,000 XP</small></p>
+                                        </div>
+                                    </div>
+                                    <div class="text-white-50">
+                                        <p class="mb-1">!rank</p>
+                                        <p class="mb-0"><em>Generating user stats...</em></p>
+                                    </div>
+                                </div>
+                                <div class="text-muted">
+                                    <small>Preview of in-channel level display</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three-column features -->
+    <div class="row mb-5">
+        <!-- Achievement System -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header bg-secondary-custom text-white">
+                    <h3 class="h4 mb-0">Achievement System</h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-trophy fa-3x text-warning mb-3"></i>
+                    </div>
+                    <p>Reward users for completing specific goals and milestones in your server with our comprehensive achievement system.</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item border-0">
+                            <i class="fas fa-medal text-secondary-custom me-2"></i>
+                            <strong>Custom achievements</strong> - Create server-specific goals
+                        </li>
+                        <li class="list-group-item border-0">
+                            <i class="fas fa-medal text-secondary-custom me-2"></i>
+                            <strong>Multi-tier badges</strong> - Bronze, silver, gold and diamond tiers
+                        </li>
+                        <li class="list-group-item border-0">
+                            <i class="fas fa-medal text-secondary-custom me-2"></i>
+                            <strong>Achievement notifications</strong> - Celebrate user accomplishments
+                        </li>
+                        <li class="list-group-item border-0">
+                            <i class="fas fa-medal text-secondary-custom me-2"></i>
+                            <strong>Profile showcases</strong> - Display earned achievements on profiles
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Level Cards -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header bg-dark-blue text-white">
+                    <h3 class="h4 mb-0">Visual Level Cards</h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-id-card fa-3x text-dark-blue mb-3"></i>
+                    </div>
+                    <p>Customize beautiful profile and level cards to match your server's theme and style.</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item border-0">
+                            <i class="fas fa-palette text-dark-blue me-2"></i>
+                            <strong>Custom backgrounds</strong> - Upload your own card backgrounds
+                        </li>
+                        <li class="list-group-item border-0">
+                            <i class="fas fa-palette text-dark-blue me-2"></i>
+                            <strong>Color themes</strong> - Customize card colors to match your server
+                        </li>
+                        <li class="list-group-item border-0">
+                            <i class="fas fa-palette text-dark-blue me-2"></i>
+                            <strong>Font options</strong> - Choose from a variety of font styles
+                        </li>
+                        <li class="list-group-item border-0">
+                            <i class="fas fa-palette text-dark-blue me-2"></i>
+                            <strong>Layout templates</strong> - Multiple card designs to choose from
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Role Rewards -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header bg-purple text-white">
+                    <h3 class="h4 mb-0">Role Rewards</h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-award fa-3x text-purple mb-3"></i>
+                    </div>
+                    <p>Automatically assign roles when members reach specific levels, creating a rewarding progression system.</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item border-0">
+                            <i class="fas fa-users-cog text-purple me-2"></i>
+                            <strong>Level-based roles</strong> - Reward activity with special roles
+                        </li>
+                        <li class="list-group-item border-0">
+                            <i class="fas fa-users-cog text-purple me-2"></i>
+                            <strong>Role stacking</strong> - Choose whether to keep or replace previous roles
+                        </li>
+                        <li class="list-group-item border-0">
+                            <i class="fas fa-users-cog text-purple me-2"></i>
+                            <strong>Role notifications</strong> - Announce when users earn new roles
+                        </li>
+                        <li class="list-group-item border-0">
+                            <i class="fas fa-users-cog text-purple me-2"></i>
+                            <strong>Permission management</strong> - Easily configure role permissions
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Features -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient-custom text-white">
+                    <h3 class="h4 mb-0">More Features</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-light rounded-circle p-3">
+                                        <i class="fas fa-chart-bar text-secondary-custom"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h4 class="h5">Advanced Statistics</h4>
+                                    <p class="mb-0">Detailed analytics about your server activity, member engagement, and growth trends.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-light rounded-circle p-3">
+                                        <i class="fas fa-rocket text-primary-custom"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h4 class="h5">Server Boosting Rewards</h4>
+                                    <p class="mb-0">Provide bonus XP and special achievements for members who boost your server.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-light rounded-circle p-3">
+                                        <i class="fas fa-language text-dark-blue"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h4 class="h5">Multilingual Support</h4>
+                                    <p class="mb-0">Bot commands and responses available in multiple languages to support global communities.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-light rounded-circle p-3">
+                                        <i class="fas fa-user-clock text-purple"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h4 class="h5">Scheduled Events</h4>
+                                    <p class="mb-0">Create XP boost events or special achievement opportunities during specific time periods.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <div class="card border-0 bg-dark-blue text-white shadow">
+                <div class="card-body py-5">
+                    <h3 class="mb-3">Ready to Level Up Your Discord Community?</h3>
+                    <p class="mb-4">Add our bot to your server today and start rewarding your active members</p>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-light btn-lg px-4 me-md-2">
+                            <i class="fab fa-discord me-2"></i>Login with Discord
+                        </a>
+                        <a href="#" class="btn btn-outline-light btn-lg px-4">Learn More</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
