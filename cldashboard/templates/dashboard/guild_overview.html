@@ -1,0 +1,227 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.guild_list') }}">Servers</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ guild.name }}</li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                {% if guild.icon %}
+                <img src="{{ guild.icon }}" alt="{{ guild.name }}" class="rounded-circle me-3" style="width: 64px; height: 64px;">
+                {% else %}
+                <div class="rounded-circle bg-secondary text-white me-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                    <span class="fs-4">{{ guild.name[:1] }}</span>
+                </div>
+                {% endif %}
+                <div>
+                    <h1 class="mb-0">{{ guild.name }}</h1>
+                    <small class="text-muted">Server ID: {{ guild.guild_id }}</small>
+                </div>
+            </div>
+            {% if current_user.can_manage_guild(guild.guild_id) %}
+            <a href="{{ url_for('admin.guild_settings', guild_id=guild.guild_id) }}" class="btn btn-primary">
+                <i class="fas fa-cog me-2"></i>Server Settings
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Overview Stats -->
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Total Members</h6>
+                <h3 class="card-title mb-0" id="member-count">Loading...</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Active Users</h6>
+                <h3 class="card-title mb-0" id="active-users">Loading...</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Total XP</h6>
+                <h3 class="card-title mb-0" id="total-xp">Loading...</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Levels Earned</h6>
+                <h3 class="card-title mb-0" id="total-levels">Loading...</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8 mb-4">
+        <!-- Activity Chart -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Server Activity</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="activity-chart" height="300"></canvas>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Recent Activity</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush" id="recent-activity">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Loading activity...</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('dashboard.guild_leaderboard', guild_id=guild.guild_id) }}" class="btn btn-primary">
+                        <i class="fas fa-trophy me-2"></i>View Leaderboard
+                    </a>
+                    <a href="{{ url_for('dashboard.guild_achievements', guild_id=guild.guild_id) }}" class="btn btn-secondary">
+                        <i class="fas fa-medal me-2"></i>Achievements
+                    </a>
+                    <a href="{{ url_for('dashboard.guild_events', guild_id=guild.guild_id) }}" class="btn btn-info">
+                        <i class="fas fa-calendar-alt me-2"></i>Events
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Server Info -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Server Information</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Owner</dt>
+                    <dd class="col-sm-8" id="server-owner">Loading...</dd>
+                    
+                    <dt class="col-sm-4">Created</dt>
+                    <dd class="col-sm-8" id="server-created">Loading...</dd>
+                    
+                    <dt class="col-sm-4">Region</dt>
+                    <dd class="col-sm-8" id="server-region">Loading...</dd>
+                    
+                    <dt class="col-sm-4">Channels</dt>
+                    <dd class="col-sm-8" id="server-channels">Loading...</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize activity chart
+    const ctx = document.getElementById('activity-chart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Server Activity',
+                data: [12, 19, 3, 5, 2, 3, 7],
+                borderColor: '#6f42c1',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Fetch server stats
+    fetch(`/api/guilds/{{ guild.guild_id }}/stats`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('member-count').textContent = data.data.member_count;
+                document.getElementById('active-users').textContent = data.data.active_users;
+                document.getElementById('total-xp').textContent = data.data.total_xp;
+                document.getElementById('total-levels').textContent = data.data.total_levels;
+            }
+        })
+        .catch(error => console.error('Error fetching server stats:', error));
+    
+    // Fetch server info
+    fetch(`/api/guilds/{{ guild.guild_id }}/info`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('server-owner').textContent = data.data.owner;
+                document.getElementById('server-created').textContent = new Date(data.data.created_at).toLocaleDateString();
+                document.getElementById('server-region').textContent = data.data.region;
+                document.getElementById('server-channels').textContent = data.data.channels;
+            }
+        })
+        .catch(error => console.error('Error fetching server info:', error));
+    
+    // Fetch recent activity
+    fetch(`/api/guilds/{{ guild.guild_id }}/activity`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const activityList = document.getElementById('recent-activity');
+                activityList.innerHTML = data.data.map(activity => `
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${activity.description}</h6>
+                            <small class="text-muted">${activity.time}</small>
+                        </div>
+                        ${activity.details ? `<p class="mb-1">${activity.details}</p>` : ''}
+                    </div>
+                `).join('');
+            }
+        })
+        .catch(error => console.error('Error fetching recent activity:', error));
+});
+</script>
+{% endblock %} 
