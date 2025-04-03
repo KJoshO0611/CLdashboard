@@ -116,11 +116,15 @@ def discord_callback():
         else:
             # Process guild data
             for guild_data in guilds_response.json():
+                # Skip guilds where the user doesn't have admin permissions
+                if not guild_data.get('owner') and not guild_data.get('permissions', 0) & 0x8:  # 0x8 is ADMINISTRATOR permission
+                    continue
+                
                 guild_info = {
                     'guild_id': str(guild_data['id']),
                     'name': guild_data['name'],
                     'icon': f"https://cdn.discordapp.com/icons/{guild_data['id']}/{guild_data['icon']}.png" if guild_data.get('icon') else None,
-                    'owner_id': str(guild_data['owner_id']) if 'owner_id' in guild_data else None
+                    'owner_id': str(guild_data.get('owner_id', user.discord_id))  # Use user's ID as fallback if owner_id is not provided
                 }
                 
                 # Update or create the guild in the database
@@ -133,6 +137,7 @@ def discord_callback():
                     # Update guild data
                     db_guild.name = guild_info['name']
                     db_guild.icon = guild_info['icon']
+                    db_guild.owner_id = guild_info['owner_id']  # Update owner_id as well
                 
                 # Add guild to user's guilds if not already added
                 if db_guild not in user.guilds:
