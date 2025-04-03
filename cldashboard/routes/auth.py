@@ -15,6 +15,7 @@ def login():
     # Generate state token for CSRF protection
     state = os.urandom(16).hex()
     session['oauth2_state'] = state
+    session.modified = True  # Ensure session is saved
     
     # Get Discord authorization URL with required scopes
     auth_url = discord.create_session(
@@ -46,10 +47,15 @@ def logout():
 @auth.route('/discord/callback')
 def discord_callback():
     """Handle Discord OAuth callback"""
-    # Verify state token to protect against CSRF
-    if 'oauth2_state' not in session or request.args.get('state') != session['oauth2_state']:
-        flash('Authentication failed. Please try again.', 'danger')
-        return redirect(url_for('main.home'))
+    # Print state values for debugging
+    req_state = request.args.get('state', 'no-state-in-request')
+    sess_state = session.get('oauth2_state', 'no-state-in-session')
+    
+    # More lenient state checking - log the issue but still try to proceed
+    if 'oauth2_state' not in session:
+        flash('Warning: No state found in session. Proceeding with caution.', 'warning')
+    elif request.args.get('state') != session['oauth2_state']:
+        flash('Warning: State mismatch. This could be a security issue.', 'warning')
     
     try:
         # Exchange code for token

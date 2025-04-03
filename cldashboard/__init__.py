@@ -55,9 +55,9 @@ def create_app():
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
     app.config["SESSION_FILE_DIR"] = os.path.join(app.root_path, "flask_session")
     app.config["SESSION_USE_SIGNER"] = True
-    app.config["SESSION_COOKIE_SECURE"] = not os.getenv("DEBUG")
+    app.config["SESSION_COOKIE_SECURE"] = False  # Set to False to allow both HTTP and HTTPS
     app.config["SESSION_COOKIE_HTTPONLY"] = True
-    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_SAMESITE"] = None  # Allow cross-site cookies during OAuth flow
     
     # CSRF protection configuration
     app.config["WTF_CSRF_ENABLED"] = True
