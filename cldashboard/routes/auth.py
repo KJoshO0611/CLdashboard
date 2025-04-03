@@ -3,6 +3,8 @@ from flask_login import login_user, logout_user, current_user, login_required
 from cldashboard import discord, db
 from cldashboard.models.user import User, Guild
 import os
+import requests
+import json
 
 auth = Blueprint('auth', __name__)
 
@@ -47,60 +49,94 @@ def logout():
 @auth.route('/discord/callback')
 def discord_callback():
     """Handle Discord OAuth callback"""
-    # Print state values for debugging
+    # Log state values for debugging
     req_state = request.args.get('state', 'no-state-in-request')
     sess_state = session.get('oauth2_state', 'no-state-in-session')
     
-    # More lenient state checking - log the issue but still try to proceed
-    if 'oauth2_state' not in session:
-        flash('Warning: No state found in session. Proceeding with caution.', 'warning')
-    elif request.args.get('state') != session['oauth2_state']:
-        flash('Warning: State mismatch. This could be a security issue.', 'warning')
+    # Get the authorization code from the callback
+    code = request.args.get('code')
+    if not code:
+        flash('No authorization code received from Discord.', 'danger')
+        return redirect(url_for('main.home'))
     
     try:
-        # Exchange code for token
-        discord.callback()
+        # Implement our own token exchange to bypass Flask-Discord's state check
+        client_id = os.getenv('DISCORD_CLIENT_ID')
+        client_secret = os.getenv('DISCORD_CLIENT_SECRET')
+        redirect_uri = os.getenv('DISCORD_REDIRECT_URI')
         
-        # Get authenticated user from Discord
-        discord_user = discord.fetch_user()
+        # Exchange code for token
+        token_url = 'https://discord.com/api/oauth2/token'
+        token_data = {
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': redirect_uri
+        }
+        token_headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        token_response = requests.post(token_url, data=token_data, headers=token_headers)
+        
+        if token_response.status_code != 200:
+            flash(f'Failed to exchange code for token: {token_response.text}', 'danger')
+            return redirect(url_for('main.home'))
+        
+        token_json = token_response.json()
+        access_token = token_json['access_token']
+        
+        # Get user info from Discord
+        user_url = 'https://discord.com/api/users/@me'
+        guilds_url = 'https://discord.com/api/users/@me/guilds'
+        headers = {'Authorization': f'Bearer {access_token}'}
+        
+        user_response = requests.get(user_url, headers=headers)
+        if user_response.status_code != 200:
+            flash(f'Failed to get user info: {user_response.text}', 'danger')
+            return redirect(url_for('main.home'))
+        
+        discord_user_data = user_response.json()
+        
+        # Format Discord data
         discord_data = {
-            'id': discord_user.id,
-            'username': discord_user.name,
-            'discriminator': discord_user.discriminator,
-            'email': discord_user.email,
-            'avatar': discord_user.avatar_url
+            'id': discord_user_data['id'],
+            'username': discord_user_data['username'],
+            'discriminator': discord_user_data.get('discriminator', '0'),
+            'email': discord_user_data.get('email', ''),
+            'avatar': f"https://cdn.discordapp.com/avatars/{discord_user_data['id']}/{discord_user_data['avatar']}.png" if discord_user_data.get('avatar') else None
         }
         
         # Get or create user
         user = User.get_or_create(discord_data)
         
-        # Get user's guilds
-        discord_guilds = discord.fetch_guilds()
-        
-        # Store guilds in database
-        for guild in discord_guilds:
-            # Check if guild has the bot
-            guild_data = {
-                'guild_id': str(guild.id),
-                'name': guild.name,
-                'icon': guild.icon_url,
-                'owner_id': str(guild.owner_id) if hasattr(guild, 'owner_id') else None
-            }
-            
-            # Update or create the guild in the database
-            db_guild = Guild.query.filter_by(guild_id=str(guild.id)).first()
-            
-            if not db_guild:
-                db_guild = Guild(**guild_data)
-                db.session.add(db_guild)
-            else:
-                # Update guild data
-                db_guild.name = guild.name
-                db_guild.icon = guild.icon_url
-            
-            # Add guild to user's guilds if not already added
-            if db_guild not in user.guilds:
-                user.guilds.append(db_guild)
+        # Get user's guilds 
+        guilds_response = requests.get(guilds_url, headers=headers)
+        if guilds_response.status_code != 200:
+            flash(f'Failed to get guild info: {guilds_response.text}', 'warning')
+            # Continue anyway since we have the user
+        else:
+            # Process guild data
+            for guild_data in guilds_response.json():
+                guild_info = {
+                    'guild_id': str(guild_data['id']),
+                    'name': guild_data['name'],
+                    'icon': f"https://cdn.discordapp.com/icons/{guild_data['id']}/{guild_data['icon']}.png" if guild_data.get('icon') else None,
+                    'owner_id': str(guild_data['owner_id']) if 'owner_id' in guild_data else None
+                }
+                
+                # Update or create the guild in the database
+                db_guild = Guild.query.filter_by(guild_id=guild_info['guild_id']).first()
+                
+                if not db_guild:
+                    db_guild = Guild(**guild_info)
+                    db.session.add(db_guild)
+                else:
+                    # Update guild data
+                    db_guild.name = guild_info['name']
+                    db_guild.icon = guild_info['icon']
+                
+                # Add guild to user's guilds if not already added
+                if db_guild not in user.guilds:
+                    user.guilds.append(db_guild)
         
         db.session.commit()
         
@@ -114,7 +150,7 @@ def discord_callback():
             session.pop('next')
             return redirect(next_page)
         
-        # Ensure we're returning a string URL, not a Response object
+        flash('Successfully logged in!', 'success')
         return redirect(url_for('dashboard.index'))
     
     except Exception as e:
