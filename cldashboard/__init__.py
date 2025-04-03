@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from .config import Config
 import logging
 from logging.handlers import RotatingFileHandler
+from sqlalchemy import text
 
 # Load environment variables
 load_dotenv()
@@ -141,8 +142,8 @@ def create_app(config_class=Config):
     @app.before_request
     def before_request():
         try:
-            # Test database connection
-            db.session.execute('SELECT 1')
+            # Test database connection using proper SQLAlchemy text
+            db.session.execute(text('SELECT 1'))
         except Exception as e:
             app.logger.error(f'Database connection error: {str(e)}')
             db.session.rollback()
