@@ -141,21 +141,39 @@ def create_app(config_class=Config):
     
     @app.before_request
     def before_request():
-        try:
-            # Test database connection using proper SQLAlchemy text
-            db.session.execute(text('SELECT 1'))
-        except Exception as e:
-            app.logger.error(f'Database connection error: {str(e)}')
-            db.session.rollback()
-            # Don't raise the error, let the request continue
+        # Only test connection for non-static routes
+        if not request.path.startswith('/static/'):
+            try:
+                # Use a lightweight connection test
+                db.session.execute(text('SELECT 1')).scalar()
+            except Exception as e:
+                app.logger.error(f'Database connection error: {str(e)}')
+                db.session.rollback()
+                # Don't raise the error, let the request continue
     
     @app.after_request
     def after_request(response):
-        try:
-            db.session.commit()
-        except Exception as e:
-            app.logger.error(f'Database commit error: {str(e)}')
-            db.session.rollback()
+        # Only commit for non-static routes
+        if not request.path.startswith('/static/'):
+            try:
+                db.session.commit()
+            except Exception as e:
+                app.logger.error(f'Database commit error: {str(e)}')
+                db.session.rollback()
         return response
+    
+    # Add request timeout handling
+    @app.before_request
+    def timeout_handler():
+        # Set a timeout for the request
+        request.timeout = app.config['WORKER_TIMEOUT']
+    
+    # Add memory cleanup
+    @app.teardown_appcontext
+    def cleanup(error):
+        # Clean up any resources
+        db.session.remove()
+        if error:
+            db.session.rollback()
     
     return app 

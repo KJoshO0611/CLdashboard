@@ -10,17 +10,17 @@ class Config:
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace('postgres://', 'postgresql://', 1)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': 5,  # Reduced pool size
-        'max_overflow': 10,  # Allow up to 10 connections beyond pool_size
+        'pool_size': 3,  # Reduced pool size
+        'max_overflow': 5,  # Reduced max overflow
         'pool_recycle': 1800,  # Recycle connections after 30 minutes
         'pool_pre_ping': True,  # Enable connection health checks
         'connect_args': {
             'sslmode': 'require',  # Force SSL
-            'connect_timeout': 5,  # Reduced timeout
+            'connect_timeout': 3,  # Reduced timeout
             'keepalives': 1,  # Enable keepalive
             'keepalives_idle': 30,  # Send keepalive every 30 seconds
             'keepalives_interval': 10,  # Retry keepalive every 10 seconds
-            'keepalives_count': 5  # Retry 5 times before giving up
+            'keepalives_count': 3  # Reduced retry count
         }
     }
     
@@ -37,4 +37,8 @@ class Config:
     
     # Application settings
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
-    SEND_FILE_MAX_AGE_DEFAULT = 31536000  # 1 year cache for static files 
+    SEND_FILE_MAX_AGE_DEFAULT = 31536000  # 1 year cache for static files
+    
+    # Worker settings
+    WORKER_TIMEOUT = 30  # 30 seconds timeout
+    WORKER_KEEPALIVE = 5  # 5 seconds keepalive 
