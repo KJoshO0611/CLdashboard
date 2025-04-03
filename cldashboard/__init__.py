@@ -92,7 +92,7 @@ def create_app():
     from cldashboard.routes.api import api
     
     app.register_blueprint(main)
-    app.register_blueprint(auth)
+    app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(dashboard)
     app.register_blueprint(admin)
     app.register_blueprint(api)
