@@ -22,9 +22,11 @@ document.addEventListener('DOMContentLoaded', function() {
 // AJAX CSRF Token Setup
 function setupAjaxCSRF() {
     // Get CSRF token from meta tag
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const csrfTokenElement = document.querySelector('meta[name="csrf-token"]');
     
-    if (csrfToken) {
+    if (csrfTokenElement) {
+        const csrfToken = csrfTokenElement.getAttribute('content');
+        
         // Set up AJAX CSRF token for jQuery
         $.ajaxSetup({
             beforeSend: function(xhr, settings) {
