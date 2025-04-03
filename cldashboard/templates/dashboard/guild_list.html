@@ -1,0 +1,76 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">My Servers</li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="mb-0">My Discord Servers</h1>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                <i class="fas fa-sync-alt me-2"></i>Refresh Servers
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        {% if current_user.guilds %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for guild in current_user.guilds %}
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                {% if guild.icon %}
+                                <img src="{{ guild.icon }}" alt="{{ guild.name }}" class="rounded-circle me-3" style="width: 64px; height: 64px;">
+                                {% else %}
+                                <div class="rounded-circle bg-secondary text-white me-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                                    <span class="fs-4">{{ guild.name[:1] }}</span>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <h5 class="card-title mb-0">{{ guild.name }}</h5>
+                                    <small class="text-muted">Server ID: {{ guild.guild_id }}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('dashboard.guild_overview', guild_id=guild.guild_id) }}" class="btn btn-primary">
+                                    <i class="fas fa-chart-line me-2"></i>View Dashboard
+                                </a>
+                                {% if current_user.can_manage_guild(guild.guild_id) %}
+                                <a href="{{ url_for('admin.guild_settings', guild_id=guild.guild_id) }}" class="btn btn-secondary">
+                                    <i class="fas fa-cog me-2"></i>Manage Settings
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <h3 class="card-title mb-4">No Servers Found</h3>
+                    <p class="card-text mb-4">You don't have access to any Discord servers yet. Make sure you have the necessary permissions in your Discord servers.</p>
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-4 gap-3">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh Servers
+                        </a>
+                        <a href="{{ url_for('main.features') }}" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="fas fa-info-circle me-2"></i>Learn More
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

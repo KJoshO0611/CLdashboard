@@ -1,0 +1,174 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">My Profile</li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="mb-0">My Profile</h1>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                <i class="fas fa-sync-alt me-2"></i>Refresh Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                {% if current_user.avatar %}
+                <img src="{{ current_user.avatar }}" alt="{{ current_user.username }}" class="rounded-circle mb-3" style="width: 150px; height: 150px;">
+                {% else %}
+                <div class="rounded-circle bg-secondary text-white mb-3 d-flex align-items-center justify-content-center mx-auto" style="width: 150px; height: 150px;">
+                    <span class="fs-1">{{ current_user.username[:1] }}</span>
+                </div>
+                {% endif %}
+                
+                <h4 class="mb-1">{{ current_user.username }}</h4>
+                {% if current_user.discriminator != '0' %}
+                <p class="text-muted mb-2">#{{ current_user.discriminator }}</p>
+                {% endif %}
+                
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                    {% if current_user.is_owner %}
+                    <span class="badge bg-danger">Owner</span>
+                    {% endif %}
+                    {% if current_user.is_admin %}
+                    <span class="badge bg-warning">Admin</span>
+                    {% endif %}
+                    {% if current_user.is_moderator %}
+                    <span class="badge bg-info">Moderator</span>
+                    {% endif %}
+                </div>
+                
+                <div class="text-muted small">
+                    <p class="mb-1"><i class="fas fa-id me-2"></i>Discord ID: {{ current_user.discord_id }}</p>
+                    <p class="mb-1"><i class="fas fa-calendar me-2"></i>Joined: {{ current_user.created_at.strftime('%Y-%m-%d') }}</p>
+                    <p class="mb-0"><i class="fas fa-clock me-2"></i>Last Login: {{ current_user.last_login.strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Account Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="profile-settings-form">
+                    <div class="mb-3">
+                        <label for="email-notifications" class="form-label">Email Notifications</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="email-notifications" checked>
+                            <label class="form-check-label" for="email-notifications">
+                                Receive email notifications for important updates
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="theme-preference" class="form-label">Theme Preference</label>
+                        <select class="form-select" id="theme-preference">
+                            <option value="light">Light</option>
+                            <option value="dark" selected>Dark</option>
+                            <option value="system">System Default</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-2"></i>Save Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Activity Overview</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="activity-chart" height="300"></canvas>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Recent Activity</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Logged in to dashboard</h6>
+                            <small class="text-muted">Just now</small>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Updated server settings</h6>
+                            <small class="text-muted">2 hours ago</small>
+                        </div>
+                        <p class="mb-1">Modified XP settings for "Gaming Server"</p>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Added new achievement</h6>
+                            <small class="text-muted">1 day ago</small>
+                        </div>
+                        <p class="mb-1">Created "First Level" achievement</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize activity chart
+    const ctx = document.getElementById('activity-chart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Daily Activity',
+                data: [12, 19, 3, 5, 2, 3, 7],
+                borderColor: '#6f42c1',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Handle profile settings form submission
+    document.getElementById('profile-settings-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        // TODO: Implement settings save functionality
+        alert('Settings saved successfully!');
+    });
+});
+</script>
+{% endblock %} 
