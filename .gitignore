@@ -4,3 +4,8 @@ __pycache__
 .env/local
 .env/example
 logs/
+run_local.py
+create_local_db.sql
+run.py
+setup_local_db.py
+switch_env,py
