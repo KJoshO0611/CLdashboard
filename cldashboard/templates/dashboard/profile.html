@@ -49,8 +49,20 @@
                 
                 <div class="text-muted small">
                     <p class="mb-1"><i class="fas fa-id me-2"></i>Discord ID: {{ current_user.discord_id }}</p>
-                    <p class="mb-1"><i class="fas fa-calendar me-2"></i>Joined: {{ current_user.created_at.strftime('%Y-%m-%d') }}</p>
-                    <p class="mb-0"><i class="fas fa-clock me-2"></i>Last Login: {{ current_user.last_login.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p class="mb-1"><i class="fas fa-calendar me-2"></i>Joined: 
+                        {% if current_user.created_at %}
+                            {{ current_user.created_at.strftime('%Y-%m-%d') }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </p>
+                    <p class="mb-0"><i class="fas fa-clock me-2"></i>Last Login: 
+                        {% if current_user.last_login %}
+                            {{ current_user.last_login.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </p>
                 </div>
             </div>
         </div>

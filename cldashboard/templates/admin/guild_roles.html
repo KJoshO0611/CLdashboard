@@ -1,0 +1,299 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.guild_list') }}">Servers</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.guild_overview', guild_id=guild.guild_id) }}">{{ guild.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Role Rewards</li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="mb-0">{{ guild.name }} Role Rewards</h1>
+            {% if guild.icon %}
+            <img src="{{ guild.icon }}" alt="{{ guild.name }}" class="rounded-circle" style="width: 64px; height: 64px;">
+            {% else %}
+            <div class="rounded-circle bg-primary-custom text-white d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                <span class="fs-4">{{ guild.name[:1] }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Sidebar navigation -->
+    <div class="col-md-3 mb-4">
+        <div class="sidebar">
+            <div class="fw-bold mb-3 text-muted">SETTINGS</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.guild_settings', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-cog"></i> General Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.guild_xp_settings', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-chart-line"></i> XP Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ url_for('admin.guild_roles', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-user-tag"></i> Role Rewards
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.manage_achievements', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-trophy"></i> Achievements
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.manage_events', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-calendar-alt"></i> Events
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="fw-bold mb-3 mt-4 text-muted">DATA</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('dashboard.guild_leaderboard', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-list-ol"></i> Leaderboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-chart-pie"></i> Statistics
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-history"></i> Activity Logs
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Main content -->
+    <div class="col-md-9">
+        <div class="card mb-4">
+            <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Role Rewards</h5>
+                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addRoleModal">
+                    <i class="fas fa-plus"></i> Add Role Reward
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Role rewards are automatically assigned to users when they reach the specified level.
+                </div>
+                
+                <div id="role-rewards-container">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Level</th>
+                                    <th>Role</th>
+                                    <th>Behavior</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="role-rewards-table">
+                                <!-- Sample role rewards; replace with dynamic data when available -->
+                                <tr>
+                                    <td>5</td>
+                                    <td><span class="badge" style="background-color: #3498db;">Active Member</span></td>
+                                    <td>Add role</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>10</td>
+                                    <td><span class="badge" style="background-color: #2ecc71;">Regular</span></td>
+                                    <td>Add role</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>25</td>
+                                    <td><span class="badge" style="background-color: #f1c40f;">Veteran</span></td>
+                                    <td>Add role</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>50</td>
+                                    <td><span class="badge" style="background-color: #e74c3c;">Elite</span></td>
+                                    <td>Add role</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Empty state for when no role rewards exist -->
+                    <div id="no-roles" class="text-center py-5 d-none">
+                        <i class="fas fa-user-tag fa-4x text-muted mb-3"></i>
+                        <h4>No Role Rewards Configured</h4>
+                        <p class="text-muted">Add role rewards to automatically assign roles when users reach specific levels.</p>
+                        <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addRoleModal">
+                            <i class="fas fa-plus"></i> Add First Role Reward
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-secondary-custom text-white">
+                <h5 class="card-title mb-0">Role Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="role-settings-form">
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="stack-roles" checked>
+                        <label class="form-check-label" for="stack-roles">Stack Roles</label>
+                        <div class="form-text">If enabled, users will keep their previous role rewards when earning new ones.</div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="announce-roles" checked>
+                        <label class="form-check-label" for="announce-roles">Announce Role Rewards</label>
+                        <div class="form-text">If enabled, the bot will announce when a user receives a role reward.</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Role Modal -->
+<div class="modal fade" id="addRoleModal" tabindex="-1" aria-labelledby="addRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary-custom text-white">
+                <h5 class="modal-title" id="addRoleModalLabel">Add Role Reward</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-role-form">
+                    <div class="mb-3">
+                        <label for="role-level" class="form-label">Level Requirement</label>
+                        <input type="number" class="form-control" id="role-level" min="1" max="100" required>
+                        <div class="form-text">The level at which this role will be awarded.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="role-select" class="form-label">Role</label>
+                        <select class="form-select" id="role-select" required>
+                            <option value="" selected disabled>Select a role</option>
+                            <option value="123456789012345678" data-color="#3498db">Active Member</option>
+                            <option value="123456789012345679" data-color="#2ecc71">Regular</option>
+                            <option value="123456789012345680" data-color="#f1c40f">Veteran</option>
+                            <option value="123456789012345681" data-color="#e74c3c">Elite</option>
+                        </select>
+                        <div class="form-text">Select the Discord role to award.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="role-behavior" class="form-label">Behavior</label>
+                        <select class="form-select" id="role-behavior" required>
+                            <option value="add" selected>Add role</option>
+                            <option value="replace">Replace previous roles</option>
+                        </select>
+                        <div class="form-text">Determine how this role interacts with previously awarded roles.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-role-btn">Save Role Reward</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Handle form submissions
+    $('#role-settings-form').submit(function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            stack_roles: $('#stack-roles').is(':checked'),
+            announce_roles: $('#announce-roles').is(':checked')
+        };
+        
+        // API call would go here
+        console.log('Saving role settings:', formData);
+        showToast('success', 'Role settings saved successfully');
+    });
+    
+    // Add role reward
+    $('#save-role-btn').click(function() {
+        const level = $('#role-level').val();
+        const roleId = $('#role-select').val();
+        const behavior = $('#role-behavior').val();
+        
+        if (!level || !roleId) {
+            showToast('error', 'Please fill in all required fields');
+            return;
+        }
+        
+        // API call would go here
+        console.log('Adding role reward:', { level, roleId, behavior });
+        
+        // Close modal
+        $('#addRoleModal').modal('hide');
+        
+        // Show success message
+        showToast('success', 'Role reward added successfully');
+    });
+    
+    // Function to show toasts
+    function showToast(type, message) {
+        const toastClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        const toast = `
+            <div class="toast align-items-center ${toastClass} text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        const toastContainer = $('#toast-container');
+        toastContainer.append(toast);
+        
+        const toastElement = toastContainer.find('.toast').last();
+        const bsToast = new bootstrap.Toast(toastElement, { delay: 5000 });
+        bsToast.show();
+        
+        // Remove toast after it's hidden
+        toastElement.on('hidden.bs.toast', function() {
+            $(this).remove();
+        });
+    }
+});
+</script>
+{% endblock %} 

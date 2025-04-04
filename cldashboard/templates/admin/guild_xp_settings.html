@@ -1,0 +1,243 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.guild_list') }}">Servers</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.guild_overview', guild_id=guild.guild_id) }}">{{ guild.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">XP Settings</li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="mb-0">{{ guild.name }} XP Settings</h1>
+            {% if guild.icon %}
+            <img src="{{ guild.icon }}" alt="{{ guild.name }}" class="rounded-circle" style="width: 64px; height: 64px;">
+            {% else %}
+            <div class="rounded-circle bg-primary-custom text-white d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                <span class="fs-4">{{ guild.name[:1] }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Sidebar navigation -->
+    <div class="col-md-3 mb-4">
+        <div class="sidebar">
+            <div class="fw-bold mb-3 text-muted">SETTINGS</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.guild_settings', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-cog"></i> General Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ url_for('admin.guild_xp_settings', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-chart-line"></i> XP Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.guild_roles', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-user-tag"></i> Role Rewards
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.manage_achievements', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-trophy"></i> Achievements
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.manage_events', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-calendar-alt"></i> Events
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="fw-bold mb-3 mt-4 text-muted">DATA</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('dashboard.guild_leaderboard', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-list-ol"></i> Leaderboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-chart-pie"></i> Statistics
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-history"></i> Activity Logs
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Main content -->
+    <div class="col-md-9">
+        <div class="card mb-4">
+            <div class="card-header bg-primary-custom text-white">
+                <h5 class="card-title mb-0">XP Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="xp-settings-form">
+                    <div class="mb-3">
+                        <label for="min-xp" class="form-label">Minimum XP per Message</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="min-xp" name="min_xp" value="{{ xp_settings.min_xp }}" min="1" max="100">
+                            <span class="input-group-text">XP</span>
+                        </div>
+                        <div class="form-text">The minimum amount of XP a user can earn from sending a message.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="max-xp" class="form-label">Maximum XP per Message</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="max-xp" name="max_xp" value="{{ xp_settings.max_xp }}" min="1" max="100">
+                            <span class="input-group-text">XP</span>
+                        </div>
+                        <div class="form-text">The maximum amount of XP a user can earn from sending a message.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cooldown" class="form-label">XP Cooldown</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="cooldown" name="xp_cooldown" value="{{ xp_settings.cooldown }}" min="0" max="3600">
+                            <span class="input-group-text">seconds</span>
+                        </div>
+                        <div class="form-text">The time users must wait between earning XP (in seconds).</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-secondary-custom text-white">
+                <h5 class="card-title mb-0">Level Progression</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> XP required for each level follows the formula: <code>100 * level^2</code>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Level</th>
+                                <th>XP Required</th>
+                                <th>Total XP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>0</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>400</td>
+                                <td>400</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>900</td>
+                                <td>1,300</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>1,600</td>
+                                <td>2,900</td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td>2,500</td>
+                                <td>5,400</td>
+                            </tr>
+                            <tr>
+                                <td>...</td>
+                                <td>...</td>
+                                <td>...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Handle XP Settings form submission
+    $('#xp-settings-form').submit(function(e) {
+        e.preventDefault();
+        
+        // Get form data
+        const formData = {
+            min_xp: parseInt($('#min-xp').val()),
+            max_xp: parseInt($('#max-xp').val()),
+            xp_cooldown: parseInt($('#cooldown').val())
+        };
+        
+        // Validation
+        if (formData.min_xp > formData.max_xp) {
+            showToast('error', 'Minimum XP cannot be greater than Maximum XP');
+            return;
+        }
+        
+        // Send API request
+        $.ajax({
+            url: `/api/guilds/{{ guild.guild_id }}/settings`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+                showToast('success', 'XP settings updated successfully');
+            },
+            error: function(xhr) {
+                const response = xhr.responseJSON || { error: 'An unknown error occurred' };
+                showToast('error', response.error);
+            }
+        });
+    });
+    
+    // Function to show toasts
+    function showToast(type, message) {
+        const toastClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        const toast = `
+            <div class="toast align-items-center ${toastClass} text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        const toastContainer = $('#toast-container');
+        toastContainer.append(toast);
+        
+        const toastElement = toastContainer.find('.toast').last();
+        const bsToast = new bootstrap.Toast(toastElement, { delay: 5000 });
+        bsToast.show();
+        
+        // Remove toast after it's hidden
+        toastElement.on('hidden.bs.toast', function() {
+            $(this).remove();
+        });
+    }
+});
+</script>
+{% endblock %} 

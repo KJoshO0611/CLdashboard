@@ -218,10 +218,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const chart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            labels: [],  // Will be populated from API
             datasets: [{
                 label: 'Server Activity',
-                data: [12, 19, 3, 5, 2, 3, 7],
+                data: [],  // Will be populated from API
                 borderColor: '#6f42c1',
                 tension: 0.4
             }]
@@ -241,6 +241,29 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    
+    // Fetch activity chart data
+    fetch(`/api/guilds/{{ guild.guild_id }}/activity-chart`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                chart.data.labels = data.data.labels;
+                chart.data.datasets[0].data = data.data.data;
+                chart.update();
+            } else {
+                throw new Error(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('API Error (activity chart):', error);
+            // Display error message in chart container
+            document.getElementById('chart-container').innerHTML = `
+                <div class="alert alert-danger m-3">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error loading activity data
+                </div>
+            `;
+        });
     
     // Fetch server stats
     fetch(`/api/guilds/{{ guild.guild_id }}/stats`)

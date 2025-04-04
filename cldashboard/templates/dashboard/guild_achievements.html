@@ -79,7 +79,7 @@
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">
-                                {{ achievement.progress }}/{{ achievement.requirement }} completed
+                                {{ achievement.members_completed }}/{{ achievement.member_count }} members completed
                             </small>
                             {% if achievement.reward %}
                             <span class="badge bg-success">{{ achievement.reward }}</span>
@@ -160,11 +160,28 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Set progress bar widths
+    // Set progress bar widths based on member completion percentage
     document.querySelectorAll('.progress-bar').forEach(bar => {
-        const progress = parseInt(bar.dataset.progress);
-        const requirement = parseInt(bar.dataset.requirement);
-        bar.style.width = `${(progress / requirement) * 100}%`;
+        const membersCompleted = parseInt(bar.closest('.card').querySelector('.text-muted').textContent.split('/')[0].trim());
+        const memberCount = parseInt(bar.closest('.card').querySelector('.text-muted').textContent.split('/')[1].split(' ')[0].trim());
+        
+        // Calculate completion percentage (avoid division by zero)
+        const completionPercentage = memberCount > 0 ? (membersCompleted / memberCount) * 100 : 0;
+        
+        // Update progress bar width
+        bar.style.width = `${completionPercentage}%`;
+        
+        // Change progress bar color based on completion rate
+        if (completionPercentage >= 75) {
+            bar.classList.remove('bg-primary');
+            bar.classList.add('bg-success');
+        } else if (completionPercentage >= 50) {
+            bar.classList.remove('bg-primary');
+            bar.classList.add('bg-info');
+        } else if (completionPercentage >= 25) {
+            bar.classList.remove('bg-primary');
+            bar.classList.add('bg-warning');
+        }
     });
     
     // Handle category filtering

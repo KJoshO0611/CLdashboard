@@ -1,0 +1,293 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Guild Management</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary">Print</button>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" id="refreshGuildsBtn">
+                <i class="fas fa-sync-alt"></i> Refresh Guilds
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary mb-3">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Guilds</h5>
+                    <p class="card-text display-4">15</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success mb-3">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Active Guilds</h5>
+                    <p class="card-text display-4">12</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning mb-3">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Members</h5>
+                    <p class="card-text display-4">1.2k</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info mb-3">
+                <div class="card-body text-center">
+                    <h5 class="card-title">XP Tracked</h5>
+                    <p class="card-text display-4">250k</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="mb-0">All Guilds</h5>
+                </div>
+                <div class="col-auto">
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-sm" placeholder="Search guilds...">
+                        <button class="btn btn-sm btn-outline-secondary" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Guild</th>
+                            <th>ID</th>
+                            <th>Owner</th>
+                            <th>Members</th>
+                            <th>XP Settings</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Sample data, replace with actual data -->
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="https://cdn.discordapp.com/icons/123456789012345678/abcdef1234567890.png" alt="" class="rounded-circle me-2" style="width: 32px; height: 32px;">
+                                    <div>
+                                        <p class="fw-bold mb-0">Gaming Community</p>
+                                        <p class="text-muted mb-0 small">Created: 2022-06-15</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>123456789012345678</td>
+                            <td>JohnDoe#1234</td>
+                            <td>250</td>
+                            <td>5-15 XP, 60s cooldown</td>
+                            <td><span class="badge bg-success">Active</span></td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('dashboard.guild_overview', guild_id='123456789012345678') }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="https://cdn.discordapp.com/icons/234567890123456789/bcdef1234567890a.png" alt="" class="rounded-circle me-2" style="width: 32px; height: 32px;">
+                                    <div>
+                                        <p class="fw-bold mb-0">Anime Fan Club</p>
+                                        <p class="text-muted mb-0 small">Created: 2022-08-20</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>234567890123456789</td>
+                            <td>JaneSmith#5678</td>
+                            <td>120</td>
+                            <td>10-20 XP, 30s cooldown</td>
+                            <td><span class="badge bg-success">Active</span></td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('dashboard.guild_overview', guild_id='234567890123456789') }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                        <span>P</span>
+                                    </div>
+                                    <div>
+                                        <p class="fw-bold mb-0">Programming Help</p>
+                                        <p class="text-muted mb-0 small">Created: 2023-01-10</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>345678901234567890</td>
+                            <td>BobJohnson#9012</td>
+                            <td>85</td>
+                            <td>5-10 XP, 45s cooldown</td>
+                            <td><span class="badge bg-warning">Inactive</span></td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('dashboard.guild_overview', guild_id='345678901234567890') }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <nav aria-label="Guild pagination">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">Previous</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Guild Settings Modal -->
+<div class="modal fade" id="guildSettingsModal" tabindex="-1" aria-labelledby="guildSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="guildSettingsModalLabel">Guild Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="guildSettingsForm">
+                    <input type="hidden" id="guildId">
+                    
+                    <div class="mb-3">
+                        <label for="guildStatus" class="form-label">Status</label>
+                        <select class="form-select" id="guildStatus">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="banned">Banned</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Features</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="featureXp" checked>
+                            <label class="form-check-label" for="featureXp">XP System</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="featureRoles" checked>
+                            <label class="form-check-label" for="featureRoles">Role Rewards</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="featureAchievements" checked>
+                            <label class="form-check-label" for="featureAchievements">Achievements</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="featureEvents">
+                            <label class="form-check-label" for="featureEvents">Events</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Admin Notes</label>
+                        <textarea class="form-control" id="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveGuildSettingsBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Handle refresh guilds button
+    $('#refreshGuildsBtn').click(function() {
+        // TODO: Implement guild refresh via API
+        console.log('Refreshing guilds');
+        
+        // Show loading spinner
+        $(this).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Refreshing...');
+        $(this).prop('disabled', true);
+        
+        // Simulate API call
+        setTimeout(function() {
+            $('#refreshGuildsBtn').html('<i class="fas fa-sync-alt"></i> Refresh Guilds');
+            $('#refreshGuildsBtn').prop('disabled', false);
+            
+            // Show success message
+            alert('Guilds refreshed successfully!');
+        }, 2000);
+    });
+    
+    // Handle guild settings buttons
+    $('.btn-outline-primary').click(function() {
+        // TODO: Implement getting guild settings via API
+        $('#guildSettingsModal').modal('show');
+    });
+    
+    // Handle save guild settings
+    $('#saveGuildSettingsBtn').click(function() {
+        // TODO: Implement saving guild settings via API
+        console.log('Saving guild settings');
+        
+        // Close modal
+        $('#guildSettingsModal').modal('hide');
+        
+        // Show success message
+        alert('Guild settings saved successfully!');
+    });
+});
+</script>
+{% endblock %} 

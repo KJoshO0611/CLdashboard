@@ -1,39 +1,50 @@
 from cldashboard import db, login_manager
 from flask_login import UserMixin
 from datetime import datetime
+from sqlalchemy import cast, BigInteger, Column, String, DateTime, func, ForeignKey, Integer, Boolean, JSON
+from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 @login_manager.user_loader
 def load_user(user_id):
+    # Convert string user_id from session to integer for database lookup
     return User.query.get(int(user_id))
 
 class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    discord_id = db.Column(db.String(20), unique=True, nullable=False)
-    username = db.Column(db.String(100), nullable=False)
-    discriminator = db.Column(db.String(4), nullable=True)
-    email = db.Column(db.String(120), unique=True, nullable=True)
-    avatar = db.Column(db.String(150), nullable=True)
-    role = db.Column(db.String(20), default='user')  # 'owner', 'admin', 'moderator', 'user'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_login = db.Column(db.DateTime, default=datetime.utcnow)
+    __tablename__ = 'users'
+    
+    # Using BigInteger to match the BIGINT type in PostgreSQL
+    discord_id = Column(BigInteger, primary_key=True)
+    username = Column(String(255), nullable=False)
+    discriminator = Column(String(4))
+    email = Column(String(255))
+    avatar = Column(String(255))
+    # Changed role column to JSONB, allowing a list of roles
+    role = Column(JSONB, default=lambda: ["user"], nullable=False) 
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_login = Column(DateTime(timezone=True))
+    
+    # This is needed for Flask-Login to work correctly with a non-integer id
+    def get_id(self):
+        return str(self.discord_id)
     
     # User's guilds (Discord servers)
-    guilds = db.relationship('Guild', secondary='user_guild', backref='users')
+    guilds = relationship('Guild', secondary='user_guild', backref='users')
     
     def __repr__(self):
         return f"User('{self.username}', '{self.discord_id}')"
     
     @property
     def is_owner(self):
-        return self.role == 'owner'
+        return isinstance(self.role, list) and 'owner' in self.role
         
     @property
     def is_admin(self):
-        return self.role == 'admin' or self.role == 'owner'
+        return isinstance(self.role, list) and 'admin' in self.role
     
     @property
     def is_moderator(self):
-        return self.role == 'moderator' or self.is_admin
+        return isinstance(self.role, list) and ('moderator' in self.role or self.is_admin)
     
     def update_last_login(self):
         self.last_login = datetime.utcnow()
@@ -60,12 +71,13 @@ class User(db.Model, UserMixin):
     @staticmethod
     def get_or_create(discord_user):
         """Get existing user or create a new one from Discord user data"""
-        user = User.query.filter_by(discord_id=str(discord_user['id'])).first()
+        user_id = int(discord_user['id'])
+        user = User.query.filter_by(discord_id=user_id).first()
         
         if not user:
             # Create new user
             user = User(
-                discord_id=str(discord_user['id']),
+                discord_id=user_id,
                 username=discord_user['username'],
                 discriminator=discord_user.get('discriminator'),
                 email=discord_user.get('email'),
@@ -84,71 +96,102 @@ class User(db.Model, UserMixin):
             
         return user
 
+    def get_int_id(self):
+        """Return the discord_id as an integer for database queries"""
+        return self.discord_id
+
 
 class Guild(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    guild_id = db.Column(db.String(20), unique=True, nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    icon = db.Column(db.String(150), nullable=True)
-    owner_id = db.Column(db.String(20), nullable=False)
+    __tablename__ = 'guilds'
     
-    # Guild settings
-    settings = db.relationship('GuildSettings', backref='guild', uselist=False)
+    # Using BigInteger to match the BIGINT type in PostgreSQL
+    guild_id = Column(BigInteger, primary_key=True)
+    name = Column(String(255), nullable=False)
+    icon = Column(String(255))
+    owner_id = Column(BigInteger) # Nullable if owner info isn't always present
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Guild settings - use SQLAlchemy's cast directly
+    settings = relationship('ServerConfig', backref='guild', uselist=False, 
+                             foreign_keys="ServerConfig.guild_id",
+                             primaryjoin="Guild.guild_id == cast(ServerConfig.guild_id, BigInteger)")
+    xp_settings = relationship('ServerXpSettings', backref='guild', uselist=False,
+                                foreign_keys="ServerXpSettings.guild_id",
+                                primaryjoin="Guild.guild_id == cast(ServerXpSettings.guild_id, BigInteger)")
     
     def __repr__(self):
         return f"Guild('{self.name}', '{self.guild_id}')"
         
     def user_has_permission(self, user_discord_id, required_roles):
         """Check if a user has any of the required roles in this guild"""
+        # Convert string ID to integer if needed
+        user_id = int(user_discord_id) if isinstance(user_discord_id, str) else user_discord_id
+        
         membership = GuildMember.query.filter_by(
             guild_id=self.guild_id, 
-            user_discord_id=user_discord_id
+            user_id=user_id
         ).first()
         
         if not membership:
             return False
         
-        if any(role in required_roles for role in membership.roles):
-            return True
-            
-        return False
+        # Since the bot uses a different role system, we'll consider anyone in guild_members to have basic access
+        # You may need to adjust this based on your specific permissions system
+        return True
 
 
 # Association table for User-Guild many-to-many relationship
 user_guild = db.Table('user_guild',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
-    db.Column('guild_id', db.Integer, db.ForeignKey('guild.id'), primary_key=True)
+    db.Column('user_id', db.BigInteger, db.ForeignKey('users.discord_id'), primary_key=True),
+    db.Column('guild_id', db.BigInteger, db.ForeignKey('guilds.guild_id'), primary_key=True)
 )
 
 
 class GuildMember(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    guild_id = db.Column(db.String(20), nullable=False)
-    user_discord_id = db.Column(db.String(20), nullable=False)
-    roles = db.Column(db.JSON, default=["user"])  # ["owner", "admin", "moderator", "user"]
+    __tablename__ = 'guild_members'
     
-    __table_args__ = (
-        db.UniqueConstraint('guild_id', 'user_discord_id', name='unique_guild_member'),
-    )
+    # Composite primary key matching the bot database using BigInteger
+    guild_id = Column(BigInteger, db.ForeignKey('guilds.guild_id'), primary_key=True)
+    user_id = Column(BigInteger, db.ForeignKey('users.discord_id'), primary_key=True)
+    
+    # Fields from the bot's database
+    level = Column(db.Integer, default=1)
+    xp = Column(db.Integer, default=0)
+    last_xp_gain = Column(db.DateTime)
+    previous_xp = Column(db.Integer, default=0)
+    
+    # Additional fields for our dashboard
+    roles = Column(db.JSON, default=["user"])  # ["owner", "admin", "moderator", "user"]
     
     def __repr__(self):
-        return f"GuildMember('{self.guild_id}', '{self.user_discord_id}')"
+        return f"GuildMember('{self.guild_id}', '{self.user_id}')"
 
 
-class GuildSettings(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    guild_id = db.Column(db.Integer, db.ForeignKey('guild.id'), nullable=False)
+class ServerConfig(db.Model):
+    __tablename__ = 'server_config'
     
-    # XP Settings
-    min_xp = db.Column(db.Integer, default=5)
-    max_xp = db.Column(db.Integer, default=15)
-    xp_cooldown = db.Column(db.Integer, default=60)  # in seconds
+    guild_id = Column(BigInteger, db.ForeignKey('guilds.guild_id', ondelete='CASCADE'), primary_key=True)
     
     # Channel Settings
-    level_up_channel_id = db.Column(db.String(20), nullable=True)
-    event_announcement_channel_id = db.Column(db.String(20), nullable=True)
+    level_up_channel = Column(db.String(20), nullable=True)
+    event_channel = Column(db.String(20), nullable=True)
+    achievement_channel = Column(db.String(20), nullable=True)
     
     # Other settings can be added as needed
     
     def __repr__(self):
-        return f"GuildSettings(guild_id={self.guild_id})" 
+        return f"ServerConfig(guild_id={self.guild_id})"
+
+
+class ServerXpSettings(db.Model):
+    __tablename__ = 'server_xp_settings'
+    
+    guild_id = Column(BigInteger, db.ForeignKey('guilds.guild_id', ondelete='CASCADE'), primary_key=True)
+    
+    # XP Settings
+    min_xp = Column(db.Integer, default=5)
+    max_xp = Column(db.Integer, default=15)
+    cooldown = Column(db.Integer, default=60)  # in seconds
+    
+    def __repr__(self):
+        return f"ServerXpSettings(guild_id={self.guild_id})" 

@@ -1,0 +1,211 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">User Management</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary">Print</button>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                <i class="fas fa-plus"></i> Add User
+            </button>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="mb-0">All Users</h5>
+                </div>
+                <div class="col-auto">
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-sm" placeholder="Search users...">
+                        <button class="btn btn-sm btn-outline-secondary" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Discord ID</th>
+                            <th>Role</th>
+                            <th>Guilds</th>
+                            <th>Joined</th>
+                            <th>Last Login</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Sample data, replace with actual data -->
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="https://cdn.discordapp.com/avatars/123456789012345678/abcdef1234567890.png" alt="" class="rounded-circle me-2" style="width: 32px; height: 32px;">
+                                    <div>
+                                        <p class="fw-bold mb-0">JohnDoe</p>
+                                        <p class="text-muted mb-0 small">john@example.com</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>123456789012345678</td>
+                            <td><span class="badge bg-danger">Owner</span></td>
+                            <td>5</td>
+                            <td>2023-01-15</td>
+                            <td>2023-04-01 14:30</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="https://cdn.discordapp.com/avatars/234567890123456789/bcdef1234567890a.png" alt="" class="rounded-circle me-2" style="width: 32px; height: 32px;">
+                                    <div>
+                                        <p class="fw-bold mb-0">JaneSmith</p>
+                                        <p class="text-muted mb-0 small">jane@example.com</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>234567890123456789</td>
+                            <td><span class="badge bg-warning">Admin</span></td>
+                            <td>3</td>
+                            <td>2023-02-20</td>
+                            <td>2023-04-02 09:15</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                        <span>B</span>
+                                    </div>
+                                    <div>
+                                        <p class="fw-bold mb-0">BobJohnson</p>
+                                        <p class="text-muted mb-0 small">bob@example.com</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>345678901234567890</td>
+                            <td><span class="badge bg-info">Moderator</span></td>
+                            <td>2</td>
+                            <td>2023-03-10</td>
+                            <td>2023-04-03 16:45</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <nav aria-label="User pagination">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">Previous</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addUserForm">
+                    <div class="mb-3">
+                        <label for="discordId" class="form-label">Discord ID</label>
+                        <input type="text" class="form-control" id="discordId" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Role</label>
+                        <select class="form-select" id="role" required>
+                            <option value="">Select role</option>
+                            <option value="user">User</option>
+                            <option value="moderator">Moderator</option>
+                            <option value="admin">Admin</option>
+                            <option value="owner">Owner</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveUserBtn">Add User</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Handle add user form submission
+    $('#saveUserBtn').click(function() {
+        var discordId = $('#discordId').val();
+        var role = $('#role').val();
+        
+        if (!discordId || !role) {
+            alert('Please fill in all required fields.');
+            return;
+        }
+        
+        // TODO: Implement user addition via API
+        console.log('Adding user:', { discordId, role });
+        
+        // Close modal
+        $('#addUserModal').modal('hide');
+        
+        // Show success message
+        alert('User added successfully!');
+    });
+});
+</script>
+{% endblock %} 

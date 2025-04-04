@@ -1,0 +1,518 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Bot Settings</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <button type="button" class="btn btn-sm btn-success" id="saveAllSettingsBtn">
+                <i class="fas fa-save"></i> Save All Settings
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="list-group settings-nav" id="settings-tabs" role="tablist">
+                <a class="list-group-item list-group-item-action active" id="general-tab" data-bs-toggle="list" href="#general" role="tab" aria-controls="general">
+                    <i class="fas fa-cog me-2"></i> General
+                </a>
+                <a class="list-group-item list-group-item-action" id="xp-tab" data-bs-toggle="list" href="#xp" role="tab" aria-controls="xp">
+                    <i class="fas fa-chart-line me-2"></i> XP Settings
+                </a>
+                <a class="list-group-item list-group-item-action" id="notifications-tab" data-bs-toggle="list" href="#notifications" role="tab" aria-controls="notifications">
+                    <i class="fas fa-bell me-2"></i> Notifications
+                </a>
+                <a class="list-group-item list-group-item-action" id="integrations-tab" data-bs-toggle="list" href="#integrations" role="tab" aria-controls="integrations">
+                    <i class="fas fa-link me-2"></i> Integrations
+                </a>
+                <a class="list-group-item list-group-item-action" id="logs-tab" data-bs-toggle="list" href="#logs" role="tab" aria-controls="logs">
+                    <i class="fas fa-clipboard-list me-2"></i> Logs
+                </a>
+                <a class="list-group-item list-group-item-action" id="maintenance-tab" data-bs-toggle="list" href="#maintenance" role="tab" aria-controls="maintenance">
+                    <i class="fas fa-tools me-2"></i> Maintenance
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="tab-content" id="settings-tabContent">
+                <!-- General Settings -->
+                <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">General Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="general-settings-form">
+                                <div class="mb-3">
+                                    <label for="bot-name" class="form-label">Bot Name</label>
+                                    <input type="text" class="form-control" id="bot-name" value="LevelBot">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="bot-prefix" class="form-label">Default Command Prefix</label>
+                                    <input type="text" class="form-control" id="bot-prefix" value="!">
+                                    <div class="form-text">The default prefix used for bot commands.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="bot-status" class="form-label">Status Message</label>
+                                    <input type="text" class="form-control" id="bot-status" value="!help | Tracking XP in {guild_count} servers">
+                                    <div class="form-text">Variables: {guild_count}, {user_count}, {version}</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="bot-timezone" class="form-label">Default Timezone</label>
+                                    <select class="form-select" id="bot-timezone">
+                                        <option value="UTC" selected>UTC</option>
+                                        <option value="America/New_York">Eastern Time (ET)</option>
+                                        <option value="America/Chicago">Central Time (CT)</option>
+                                        <option value="America/Denver">Mountain Time (MT)</option>
+                                        <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                                        <option value="Europe/London">London (GMT)</option>
+                                        <option value="Europe/Paris">Central European Time (CET)</option>
+                                        <option value="Asia/Tokyo">Japan Standard Time (JST)</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="dashboard-url" class="form-label">Dashboard URL</label>
+                                    <input type="url" class="form-control" id="dashboard-url" value="https://levelbot.example.com">
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Save General Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- XP Settings -->
+                <div class="tab-pane fade" id="xp" role="tabpanel" aria-labelledby="xp-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Global XP Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="xp-settings-form">
+                                <div class="mb-3">
+                                    <label for="default-min-xp" class="form-label">Default Minimum XP per Message</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="default-min-xp" value="5" min="1" max="100">
+                                        <span class="input-group-text">XP</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="default-max-xp" class="form-label">Default Maximum XP per Message</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="default-max-xp" value="15" min="1" max="100">
+                                        <span class="input-group-text">XP</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="default-cooldown" class="form-label">Default XP Cooldown</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="default-cooldown" value="60" min="0" max="3600">
+                                        <span class="input-group-text">seconds</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="level-formula" class="form-label">XP to Level Formula</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">XP =</span>
+                                        <input type="number" class="form-control" id="level-formula-base" value="100">
+                                        <span class="input-group-text">×</span>
+                                        <select class="form-select" id="level-formula-type" style="max-width: 150px;">
+                                            <option value="linear">level</option>
+                                            <option value="square" selected>level²</option>
+                                            <option value="cube">level³</option>
+                                            <option value="exp">2^level</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-text">Formula to calculate XP required for each level.</div>
+                                </div>
+                                
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="no-xp-on-join" checked>
+                                    <label class="form-check-label" for="no-xp-on-join">No XP for New Members (24h)</label>
+                                    <div class="form-text">If enabled, new members won't earn XP for the first 24 hours.</div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Save XP Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notifications Settings -->
+                <div class="tab-pane fade" id="notifications" role="tabpanel" aria-labelledby="notifications-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Notification Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="notification-settings-form">
+                                <div class="mb-3">
+                                    <label class="form-label">Default Notifications</label>
+                                    
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="notify-level-up" checked>
+                                        <label class="form-check-label" for="notify-level-up">Level Up Notifications</label>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="notify-achievements" checked>
+                                        <label class="form-check-label" for="notify-achievements">Achievement Notifications</label>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="notify-events" checked>
+                                        <label class="form-check-label" for="notify-events">Event Notifications</label>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="notify-roles" checked>
+                                        <label class="form-check-label" for="notify-roles">Role Reward Notifications</label>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="default-level-message" class="form-label">Default Level Up Message</label>
+                                    <textarea class="form-control" id="default-level-message" rows="2">Congratulations {user_mention}! You've reached level {level} in {guild_name}!</textarea>
+                                    <div class="form-text">Variables: {user_mention}, {user_name}, {level}, {guild_name}</div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Save Notification Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Integrations Settings -->
+                <div class="tab-pane fade" id="integrations" role="tabpanel" aria-labelledby="integrations-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Discord Integration</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="discord-integration-form">
+                                <div class="mb-3">
+                                    <label for="discord-client-id" class="form-label">Discord Client ID</label>
+                                    <input type="text" class="form-control" id="discord-client-id" value="123456789012345678">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="discord-client-secret" class="form-label">Discord Client Secret</label>
+                                    <input type="password" class="form-control" id="discord-client-secret" value="•••••••••••••••••••">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="discord-bot-token" class="form-label">Discord Bot Token</label>
+                                    <input type="password" class="form-control" id="discord-bot-token" value="•••••••••••••••••••••••••••••••••••••••••••••••••••">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="discord-redirect-uri" class="form-label">Redirect URI</label>
+                                    <input type="url" class="form-control" id="discord-redirect-uri" value="https://levelbot.example.com/auth/discord/callback">
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Save Discord Integration</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Database Connection</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="database-connection-form">
+                                <div class="mb-3">
+                                    <label for="db-host" class="form-label">Database Host</label>
+                                    <input type="text" class="form-control" id="db-host" value="localhost">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="db-port" class="form-label">Database Port</label>
+                                    <input type="number" class="form-control" id="db-port" value="5432">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="db-name" class="form-label">Database Name</label>
+                                    <input type="text" class="form-control" id="db-name" value="levelbot">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="db-user" class="form-label">Database User</label>
+                                    <input type="text" class="form-control" id="db-user" value="postgres">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="db-password" class="form-label">Database Password</label>
+                                    <input type="password" class="form-control" id="db-password" value="•••••••••••">
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Save Database Connection</button>
+                                <button type="button" class="btn btn-outline-secondary" id="test-db-connection">Test Connection</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Logs Settings -->
+                <div class="tab-pane fade" id="logs" role="tabpanel" aria-labelledby="logs-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">Logging Settings</h5>
+                                <button class="btn btn-sm btn-outline-secondary" id="download-logs">
+                                    <i class="fas fa-download"></i> Download Logs
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <form id="logging-settings-form">
+                                <div class="mb-3">
+                                    <label for="log-level" class="form-label">Log Level</label>
+                                    <select class="form-select" id="log-level">
+                                        <option value="debug">Debug</option>
+                                        <option value="info" selected>Info</option>
+                                        <option value="warning">Warning</option>
+                                        <option value="error">Error</option>
+                                        <option value="critical">Critical</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="log-file" class="form-label">Log File Path</label>
+                                    <input type="text" class="form-control" id="log-file" value="logs/bot.log">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="log-format" class="form-label">Log Format</label>
+                                    <input type="text" class="form-control" id="log-format" value="[%(asctime)s] [%(levelname)s] %(message)s">
+                                </div>
+                                
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="log-rotation" checked>
+                                    <label class="form-check-label" for="log-rotation">Enable Log Rotation</label>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="log-retention" class="form-label">Log Retention (days)</label>
+                                    <input type="number" class="form-control" id="log-retention" value="30" min="1" max="365">
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Save Logging Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Recent Logs</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="log-viewer bg-dark text-light p-3" style="height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.85rem;">
+                                <div class="text-info">[2023-04-03 21:11:20,844] INFO in __init__: CLDashboard startup</div>
+                                <div class="text-info">[2023-04-03 21:11:22,351] INFO in __init__: Database migrations disabled</div>
+                                <div class="text-info">[2023-04-03 21:12:18,000] INFO in routes.api: Guild leaderboard requested for 111111111111111111</div>
+                                <div class="text-info">[2023-04-03 21:12:18,050] INFO in routes.dashboard: Leaderboard page rendered for guild 111111111111111111</div>
+                                <div class="text-warning">[2023-04-03 21:35:09,123] WARNING in routes.admin: Template not found: admin/users.html</div>
+                                <div class="text-warning">[2023-04-03 21:35:12,456] WARNING in routes.admin: Template not found: admin/guilds.html</div>
+                                <div class="text-warning">[2023-04-03 21:35:16,789] WARNING in routes.admin: Template not found: admin/settings.html</div>
+                                <div class="text-info">[2023-04-03 23:13:46,000] INFO in routes.admin: Guild roles page rendered for guild 111111111111111111</div>
+                                <div class="text-info">[2023-04-03 23:14:01,000] INFO in routes.admin: Achievements page rendered for guild 111111111111111111</div>
+                                <div class="text-info">[2023-04-03 23:14:35,000] INFO in routes.admin: Events page rendered for guild 111111111111111111</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Maintenance Settings -->
+                <div class="tab-pane fade" id="maintenance" role="tabpanel" aria-labelledby="maintenance-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Maintenance Mode</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="maintenance-settings-form">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="maintenance-mode">
+                                    <label class="form-check-label" for="maintenance-mode">Enable Maintenance Mode</label>
+                                    <div class="form-text">When enabled, only administrators can access the dashboard and the bot will be in limited operation.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="maintenance-message" class="form-label">Maintenance Message</label>
+                                    <textarea class="form-control" id="maintenance-message" rows="3">The bot is currently undergoing maintenance. We'll be back shortly!</textarea>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Save Maintenance Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="card-title mb-0">Danger Zone</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Reset All XP</h5>
+                                            <p class="card-text">This will reset XP and levels for all users across all guilds.</p>
+                                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#resetXpModal">Reset All XP</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Clear Achievement Data</h5>
+                                            <p class="card-text">This will remove all user achievement progress and completions.</p>
+                                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#clearAchievementsModal">Clear Achievements</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Run Database Vacuum</h5>
+                                            <p class="card-text">This will optimize the database and reclaim disk space.</p>
+                                            <button type="button" class="btn btn-outline-warning" id="run-vacuum">Run Vacuum</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Restart Bot</h5>
+                                            <p class="card-text">This will restart the bot process. The dashboard will remain online.</p>
+                                            <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#restartBotModal">Restart Bot</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset XP Confirmation Modal -->
+<div class="modal fade" id="resetXpModal" tabindex="-1" aria-labelledby="resetXpModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="resetXpModalLabel">Confirm XP Reset</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure you want to reset all XP data? This action cannot be undone.</p>
+                <p class="mb-0">To confirm, please type "RESET" in the field below:</p>
+                <input type="text" class="form-control mt-3" id="reset-xp-confirm" placeholder="Type RESET to confirm">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="reset-xp-btn" disabled>Reset All XP</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Handle save all settings button
+    $('#saveAllSettingsBtn').click(function() {
+        // Trigger all form submits
+        $('#general-settings-form').submit();
+        $('#xp-settings-form').submit();
+        $('#notification-settings-form').submit();
+        $('#discord-integration-form').submit();
+        $('#database-connection-form').submit();
+        $('#logging-settings-form').submit();
+        $('#maintenance-settings-form').submit();
+        
+        // Show success message
+        alert('All settings saved successfully!');
+    });
+    
+    // Handle form submissions
+    $('form').submit(function(e) {
+        e.preventDefault();
+        console.log('Saving form:', this.id);
+        // TODO: Implement form saving via API
+    });
+    
+    // Handle test database connection
+    $('#test-db-connection').click(function() {
+        $(this).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Testing...');
+        $(this).prop('disabled', true);
+        
+        // Simulate API call
+        setTimeout(function() {
+            $('#test-db-connection').html('Test Connection');
+            $('#test-db-connection').prop('disabled', false);
+            
+            // Show success message
+            alert('Database connection successful!');
+        }, 2000);
+    });
+    
+    // Handle reset XP confirmation
+    $('#reset-xp-confirm').on('input', function() {
+        if ($(this).val() === 'RESET') {
+            $('#reset-xp-btn').prop('disabled', false);
+        } else {
+            $('#reset-xp-btn').prop('disabled', true);
+        }
+    });
+    
+    // Handle reset XP button
+    $('#reset-xp-btn').click(function() {
+        // TODO: Implement XP reset via API
+        console.log('Resetting all XP data');
+        
+        // Close modal
+        $('#resetXpModal').modal('hide');
+        
+        // Show success message
+        alert('All XP data has been reset successfully!');
+    });
+    
+    // Handle run vacuum button
+    $('#run-vacuum').click(function() {
+        $(this).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Running...');
+        $(this).prop('disabled', true);
+        
+        // Simulate API call
+        setTimeout(function() {
+            $('#run-vacuum').html('Run Vacuum');
+            $('#run-vacuum').prop('disabled', false);
+            
+            // Show success message
+            alert('Database vacuum completed successfully!');
+        }, 3000);
+    });
+    
+    // Handle download logs button
+    $('#download-logs').click(function() {
+        // TODO: Implement log download via API
+        console.log('Downloading logs');
+        
+        // Simulate download
+        alert('Logs download started...');
+    });
+});
+</script>
+{% endblock %} 

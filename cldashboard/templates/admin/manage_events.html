@@ -1,0 +1,511 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.guild_list') }}">Servers</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.guild_overview', guild_id=guild.guild_id) }}">{{ guild.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Events</li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="mb-0">{{ guild.name }} Events</h1>
+            {% if guild.icon %}
+            <img src="{{ guild.icon }}" alt="{{ guild.name }}" class="rounded-circle" style="width: 64px; height: 64px;">
+            {% else %}
+            <div class="rounded-circle bg-primary-custom text-white d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                <span class="fs-4">{{ guild.name[:1] }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Sidebar navigation -->
+    <div class="col-md-3 mb-4">
+        <div class="sidebar">
+            <div class="fw-bold mb-3 text-muted">SETTINGS</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.guild_settings', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-cog"></i> General Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.guild_xp_settings', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-chart-line"></i> XP Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.guild_roles', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-user-tag"></i> Role Rewards
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.manage_achievements', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-trophy"></i> Achievements
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ url_for('admin.manage_events', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-calendar-alt"></i> Events
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="fw-bold mb-3 mt-4 text-muted">DATA</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('dashboard.guild_leaderboard', guild_id=guild.guild_id) }}">
+                        <i class="fas fa-list-ol"></i> Leaderboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-chart-pie"></i> Statistics
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-history"></i> Activity Logs
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Main content -->
+    <div class="col-md-9">
+        <!-- Event tabs -->
+        <ul class="nav nav-tabs mb-4" id="eventTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab" aria-controls="upcoming" aria-selected="true">
+                    <i class="fas fa-calendar-day"></i> Upcoming Events
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="past-tab" data-bs-toggle="tab" data-bs-target="#past" type="button" role="tab" aria-controls="past" aria-selected="false">
+                    <i class="fas fa-calendar-check"></i> Past Events
+                </button>
+            </li>
+            <li class="nav-item ms-auto" role="presentation">
+                <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#createEventModal">
+                    <i class="fas fa-plus"></i> Create Event
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="eventTabsContent">
+            <!-- Upcoming Events -->
+            <div class="tab-pane fade show active" id="upcoming" role="tabpanel" aria-labelledby="upcoming-tab">
+                <div class="row row-cols-1 row-cols-md-2 g-4">
+                    <!-- Sample upcoming events; replace with dynamic data when available -->
+                    <div class="col">
+                        <div class="card h-100 event-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="badge bg-primary">VOICE</span>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-edit"></i> Edit</a></li>
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Send Reminder</a></li>
+                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash"></i> Cancel Event</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <h5 class="card-title">Community Game Night</h5>
+                                <p class="card-text">Join us for a fun night of gaming! We'll be playing Among Us, Fall Guys, and more.</p>
+                                <div class="d-flex align-items-center text-muted mb-3">
+                                    <i class="fas fa-calendar me-2"></i>
+                                    <span>Saturday, May 15, 2023</span>
+                                </div>
+                                <div class="d-flex align-items-center text-muted mb-3">
+                                    <i class="fas fa-clock me-2"></i>
+                                    <span>8:00 PM - 10:00 PM EST</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-end">
+                                    <div>
+                                        <span class="text-muted">18 interested</span>
+                                    </div>
+                                    <a href="#" class="btn btn-outline-primary btn-sm">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col">
+                        <div class="card h-100 event-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="badge bg-success">EXTERNAL</span>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-edit"></i> Edit</a></li>
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Send Reminder</a></li>
+                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash"></i> Cancel Event</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <h5 class="card-title">Minecraft Server Launch</h5>
+                                <p class="card-text">Join the grand opening of our community Minecraft server! There will be competitions and prizes.</p>
+                                <div class="d-flex align-items-center text-muted mb-3">
+                                    <i class="fas fa-calendar me-2"></i>
+                                    <span>Sunday, May 23, 2023</span>
+                                </div>
+                                <div class="d-flex align-items-center text-muted mb-3">
+                                    <i class="fas fa-clock me-2"></i>
+                                    <span>3:00 PM - 6:00 PM EST</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-end">
+                                    <div>
+                                        <span class="text-muted">32 interested</span>
+                                    </div>
+                                    <a href="#" class="btn btn-outline-primary btn-sm">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Empty state for when no upcoming events exist -->
+                <div id="no-upcoming-events" class="text-center py-5 d-none">
+                    <i class="fas fa-calendar-day fa-4x text-muted mb-3"></i>
+                    <h4>No Upcoming Events</h4>
+                    <p class="text-muted">Create events to engage your community and boost activity.</p>
+                    <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#createEventModal">
+                        <i class="fas fa-plus"></i> Create First Event
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Past Events -->
+            <div class="tab-pane fade" id="past" role="tabpanel" aria-labelledby="past-tab">
+                <div class="row row-cols-1 row-cols-md-2 g-4">
+                    <!-- Sample past events; replace with dynamic data when available -->
+                    <div class="col">
+                        <div class="card h-100 event-card opacity-75">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="badge bg-secondary">COMPLETED</span>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-users"></i> View Attendees</a></li>
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-copy"></i> Clone Event</a></li>
+                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash"></i> Delete</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <h5 class="card-title">Server Anniversary</h5>
+                                <p class="card-text">Celebrating one year of our amazing community! Join us for games, giveaways, and more.</p>
+                                <div class="d-flex align-items-center text-muted mb-3">
+                                    <i class="fas fa-calendar me-2"></i>
+                                    <span>April 10, 2023</span>
+                                </div>
+                                <div class="d-flex align-items-center text-muted mb-3">
+                                    <i class="fas fa-clock me-2"></i>
+                                    <span>7:00 PM - 9:00 PM EST</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-end">
+                                    <div>
+                                        <span class="text-success"><i class="fas fa-user-check"></i> 45 attended</span>
+                                    </div>
+                                    <a href="#" class="btn btn-outline-secondary btn-sm">View Summary</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col">
+                        <div class="card h-100 event-card opacity-75">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="badge bg-secondary">COMPLETED</span>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-users"></i> View Attendees</a></li>
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-copy"></i> Clone Event</a></li>
+                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash"></i> Delete</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <h5 class="card-title">Community Q&A</h5>
+                                <p class="card-text">Ask the moderators and admins anything about the server, upcoming features, and more.</p>
+                                <div class="d-flex align-items-center text-muted mb-3">
+                                    <i class="fas fa-calendar me-2"></i>
+                                    <span>March 25, 2023</span>
+                                </div>
+                                <div class="d-flex align-items-center text-muted mb-3">
+                                    <i class="fas fa-clock me-2"></i>
+                                    <span>6:00 PM - 7:30 PM EST</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-end">
+                                    <div>
+                                        <span class="text-success"><i class="fas fa-user-check"></i> 27 attended</span>
+                                    </div>
+                                    <a href="#" class="btn btn-outline-secondary btn-sm">View Summary</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Empty state for when no past events exist -->
+                <div id="no-past-events" class="text-center py-5 d-none">
+                    <i class="fas fa-calendar-check fa-4x text-muted mb-3"></i>
+                    <h4>No Past Events</h4>
+                    <p class="text-muted">Past events will appear here once they're completed.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-secondary-custom text-white">
+                <h5 class="card-title mb-0">Event Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="event-settings-form">
+                    <div class="mb-3">
+                        <label for="event-channel" class="form-label">Event Announcement Channel</label>
+                        <select class="form-select" id="event-channel">
+                            <option value="">Disabled</option>
+                            <option value="123456789012345678">general</option>
+                            <option value="123456789012345679" selected>announcements</option>
+                            <option value="123456789012345680">events</option>
+                        </select>
+                        <div class="form-text">Channel where event announcements, reminders, and updates will be sent.</div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="event-reminders" checked>
+                        <label class="form-check-label" for="event-reminders">Send Event Reminders</label>
+                        <div class="form-text">If enabled, the bot will send reminders 24 hours and 1 hour before events.</div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="event-xp-bonus" checked>
+                        <label class="form-check-label" for="event-xp-bonus">Event XP Bonus</label>
+                        <div class="form-text">If enabled, users will earn bonus XP for attending events.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="event-xp-amount" class="form-label">Event Attendance XP</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="event-xp-amount" value="100" min="0" max="1000">
+                            <span class="input-group-text">XP</span>
+                        </div>
+                        <div class="form-text">The amount of XP users will receive for attending an event.</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Event Modal -->
+<div class="modal fade" id="createEventModal" tabindex="-1" aria-labelledby="createEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary-custom text-white">
+                <h5 class="modal-title" id="createEventModalLabel">Create Event</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="create-event-form">
+                    <div class="mb-3">
+                        <label for="event-name" class="form-label">Event Name</label>
+                        <input type="text" class="form-control" id="event-name" maxlength="100" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="event-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="event-description" rows="3" maxlength="1000" required></textarea>
+                        <div class="form-text">Describe your event, what will happen, and any other important details.</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="event-type" class="form-label">Event Type</label>
+                            <select class="form-select" id="event-type" required>
+                                <option value="" selected disabled>Select type</option>
+                                <option value="VOICE">Voice Event</option>
+                                <option value="STAGE">Stage Event</option>
+                                <option value="EXTERNAL">External Event</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="event-location" class="form-label">Location</label>
+                            <select class="form-select" id="event-location">
+                                <option value="" selected disabled>Select location</option>
+                                <option value="123456789012345678">general-voice</option>
+                                <option value="123456789012345679">gaming-voice</option>
+                                <option value="123456789012345680">music-voice</option>
+                                <option value="external">External (specify URL)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 external-url d-none">
+                        <label for="event-external-url" class="form-label">External URL</label>
+                        <input type="url" class="form-control" id="event-external-url" placeholder="https://...">
+                        <div class="form-text">Enter the URL for your external event (e.g., Twitch, YouTube).</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="event-date" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="event-date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="event-time" class="form-label">Start Time</label>
+                            <input type="time" class="form-control" id="event-time" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="event-duration" class="form-label">Duration</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="event-duration" min="0.5" max="12" step="0.5" value="1" required>
+                                <span class="input-group-text">hours</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="event-reminder" class="form-label">Send Reminder</label>
+                            <select class="form-select" id="event-reminder">
+                                <option value="none">No reminder</option>
+                                <option value="1h" selected>1 hour before</option>
+                                <option value="24h">24 hours before</option>
+                                <option value="both">Both 24h and 1h before</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="event-announce" checked>
+                        <label class="form-check-label" for="event-announce">Announce Event</label>
+                        <div class="form-text">If enabled, the bot will announce this event in the announcement channel.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-event-btn">Create Event</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Show/hide external URL field based on location selection
+    $('#event-location').change(function() {
+        if ($(this).val() === 'external') {
+            $('.external-url').removeClass('d-none');
+            $('#event-external-url').prop('required', true);
+        } else {
+            $('.external-url').addClass('d-none');
+            $('#event-external-url').prop('required', false);
+        }
+    });
+    
+    // Handle event settings form submission
+    $('#event-settings-form').submit(function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            event_channel: $('#event-channel').val(),
+            send_reminders: $('#event-reminders').is(':checked'),
+            event_xp_bonus: $('#event-xp-bonus').is(':checked'),
+            event_xp_amount: parseInt($('#event-xp-amount').val())
+        };
+        
+        // API call would go here
+        console.log('Saving event settings:', formData);
+        showToast('success', 'Event settings saved successfully');
+    });
+    
+    // Create event
+    $('#save-event-btn').click(function() {
+        const name = $('#event-name').val();
+        const description = $('#event-description').val();
+        const type = $('#event-type').val();
+        const date = $('#event-date').val();
+        const time = $('#event-time').val();
+        
+        if (!name || !description || !type || !date || !time) {
+            showToast('error', 'Please fill in all required fields');
+            return;
+        }
+        
+        const eventData = {
+            name: name,
+            description: description,
+            type: type,
+            location: $('#event-location').val(),
+            external_url: $('#event-external-url').val(),
+            date: date,
+            time: time,
+            duration: parseFloat($('#event-duration').val()),
+            reminder: $('#event-reminder').val(),
+            announce: $('#event-announce').is(':checked')
+        };
+        
+        // API call would go here
+        console.log('Creating event:', eventData);
+        
+        // Close modal
+        $('#createEventModal').modal('hide');
+        
+        // Show success message
+        showToast('success', 'Event created successfully');
+    });
+    
+    // Function to show toasts
+    function showToast(type, message) {
+        const toastClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        const toast = `
+            <div class="toast align-items-center ${toastClass} text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        const toastContainer = $('#toast-container');
+        toastContainer.append(toast);
+        
+        const toastElement = toastContainer.find('.toast').last();
+        const bsToast = new bootstrap.Toast(toastElement, { delay: 5000 });
+        bsToast.show();
+        
+        // Remove toast after it's hidden
+        toastElement.on('hidden.bs.toast', function() {
+            $(this).remove();
+        });
+    }
+});
+</script>
+{% endblock %} 

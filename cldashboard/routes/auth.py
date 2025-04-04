@@ -5,6 +5,8 @@ from cldashboard.models.user import User, Guild
 import os
 import requests
 import json
+from datetime import datetime
+from sqlalchemy import text
 
 auth = Blueprint('auth', __name__)
 
@@ -53,6 +55,14 @@ def discord_callback():
     req_state = request.args.get('state', 'no-state-in-request')
     sess_state = session.get('oauth2_state', 'no-state-in-session')
     
+    # Debug logging for local testing
+    print("=" * 50)
+    print(f"Discord callback received - Host: {request.host}")
+    print(f"Redirect URI from env: {os.getenv('DISCORD_REDIRECT_URI')}")
+    print(f"State from request: {req_state}")
+    print(f"State from session: {sess_state}")
+    print("=" * 50)
+    
     # Get the authorization code from the callback
     code = request.args.get('code')
     if not code:
@@ -64,6 +74,11 @@ def discord_callback():
         client_id = os.getenv('DISCORD_CLIENT_ID')
         client_secret = os.getenv('DISCORD_CLIENT_SECRET')
         redirect_uri = os.getenv('DISCORD_REDIRECT_URI')
+        
+        # For local testing: Override redirect URI based on request host if localhost
+        if 'localhost' in request.host:
+            redirect_uri = f"http://{request.host}/auth/discord/callback"
+            print(f"Local testing detected. Updated redirect URI: {redirect_uri}")
         
         # Exchange code for token
         token_url = 'https://discord.com/api/oauth2/token'
@@ -124,7 +139,8 @@ def discord_callback():
                     'guild_id': str(guild_data['id']),
                     'name': guild_data['name'],
                     'icon': f"https://cdn.discordapp.com/icons/{guild_data['id']}/{guild_data['icon']}.png" if guild_data.get('icon') else None,
-                    'owner_id': str(guild_data.get('owner_id', user.discord_id))  # Use user's ID as fallback if owner_id is not provided
+                    'owner_id': str(guild_data.get('owner_id', user.discord_id)),  # Use user's ID as fallback if owner_id is not provided
+                    'created_at': datetime.utcnow()
                 }
                 
                 # Update or create the guild in the database
@@ -141,7 +157,11 @@ def discord_callback():
                 
                 # Add guild to user's guilds if not already added
                 if db_guild not in user.guilds:
-                    user.guilds.append(db_guild)
+                    # Insert into user_guild table with integer conversion
+                    db.session.execute(
+                        text('INSERT INTO user_guild (user_id, guild_id) VALUES (:user_id, :guild_id) ON CONFLICT DO NOTHING'),
+                        {'user_id': int(user.discord_id), 'guild_id': int(db_guild.guild_id)}
+                    )
         
         db.session.commit()
         

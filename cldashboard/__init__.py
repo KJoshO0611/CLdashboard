@@ -5,12 +5,14 @@ from flask_login import LoginManager
 from flask_session import Session
 from flask_discord import DiscordOAuth2Session
 from flask_wtf.csrf import CSRFProtect, generate_csrf
-from datetime import timedelta
+from datetime import timedelta, datetime
 from dotenv import load_dotenv
 from .config import Config
 import logging
 from logging.handlers import RotatingFileHandler
 from sqlalchemy import text
+from pathlib import Path
+import subprocess
 
 # Load environment variables
 load_dotenv()
@@ -89,6 +91,22 @@ def create_app(config_class=Config):
     def inject_csrf_token():
         return dict(csrf_token=generate_csrf)
     
+    # Add custom Jinja filters
+    @app.template_filter('datetime')
+    def format_datetime(value):
+        """Format a datetime string to a readable format"""
+        if not value:
+            return ""
+        try:
+            if isinstance(value, str):
+                dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            else:
+                dt = value
+            return dt.strftime('%b %d, %Y %I:%M %p')
+        except Exception as e:
+            print(f"Error formatting datetime: {e}")
+            return value
+    
     # Configure logging
     if not app.debug and not app.testing:
         if not os.path.exists('logs'):
@@ -118,7 +136,12 @@ def create_app(config_class=Config):
     # Create database tables
     with app.app_context():
         try:
+            # Create tables that SQLAlchemy knows about (for new installations)
             db.create_all()
+            
+            # Let the app know migrations are disabled
+            app.logger.info('Database migrations disabled')
+                
         except Exception as e:
             app.logger.error(f'Database initialization error: {str(e)}')
             # Don't raise the error, allow the app to start even if tables exist

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, flash, redirect, url_for, request, abort
 from flask_login import login_required
 from cldashboard import db
-from cldashboard.models.user import Guild, GuildSettings
+from cldashboard.models.user import Guild, ServerConfig, ServerXpSettings
 from cldashboard.middleware.auth import owner_required, admin_required, guild_admin_required
 
 admin = Blueprint('admin', __name__)
@@ -49,7 +49,7 @@ def guild_settings(guild_id):
     # Get or create guild settings
     settings = guild.settings
     if not settings:
-        settings = GuildSettings(guild_id=guild.id)
+        settings = ServerConfig(guild_id=guild.guild_id)
         db.session.add(settings)
         db.session.commit()
     
@@ -70,10 +70,18 @@ def guild_xp_settings(guild_id):
     if not guild:
         abort(404)
     
+    # Get or create XP settings
+    xp_settings = guild.xp_settings
+    if not xp_settings:
+        xp_settings = ServerXpSettings(guild_id=guild.guild_id)
+        db.session.add(xp_settings)
+        db.session.commit()
+    
     return render_template(
         'admin/guild_xp_settings.html', 
         title=f'{guild.name} - XP Settings', 
-        guild=guild
+        guild=guild,
+        xp_settings=xp_settings
     )
 
 @admin.route('/dashboard/guilds/<guild_id>/roles')

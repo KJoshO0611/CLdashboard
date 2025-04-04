@@ -69,10 +69,19 @@
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="https://cdn.discordapp.com/avatars/{{ entry.discord_id }}/{{ entry.avatar }}.png" 
+                                        {% set avatar_url = 'https://cdn.discordapp.com/embed/avatars/0.png' %}
+                                        {% if entry.avatar %}
+                                            {% if entry.avatar.startswith('http') %}
+                                                {% set avatar_url = entry.avatar %}
+                                            {% else %}
+                                                {% set avatar_url = 'https://cdn.discordapp.com/avatars/' + entry.discord_id|string + '/' + entry.avatar + '.png' %}
+                                            {% endif %}
+                                        {% endif %}
+                                        <img src="{{ avatar_url }}" 
                                              alt="{{ entry.username }}" 
                                              class="rounded-circle me-2"
-                                             style="width: 32px; height: 32px;">
+                                             style="width: 32px; height: 32px;" 
+                                             onerror="this.onerror=null; this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
                                         <span>{{ entry.username }}</span>
                                     </div>
                                 </td>
@@ -105,15 +114,113 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Handle filter buttons
     const filterButtons = document.querySelectorAll('[data-filter]');
+    const leaderboardBody = document.getElementById('leaderboard-body');
+    
     filterButtons.forEach(button => {
         button.addEventListener('click', function() {
             // Update active state
             filterButtons.forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
             
-            // TODO: Implement filtering logic
-            // This would typically involve making an API call to get filtered data
-            // and updating the leaderboard table
+            // Get the filter value
+            const period = this.dataset.filter;
+            
+            // Show loading state
+            leaderboardBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                            <p>Loading leaderboard data...</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            
+            // Fetch filtered data from API
+            fetch(`/api/guilds/{{ guild.guild_id }}/leaderboard?period=${period}`, {
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success || !data.data || data.data.length === 0) {
+                    // No data available
+                    leaderboardBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-trophy fa-2x mb-3"></i>
+                                    <p>No leaderboard data available for this time period</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                // Render the leaderboard data
+                let html = '';
+                data.data.forEach(entry => {
+                    let badge = '';
+                    if (entry.rank === 1) {
+                        badge = '<span class="badge bg-warning text-dark">🥇</span>';
+                    } else if (entry.rank === 2) {
+                        badge = '<span class="badge bg-secondary">🥈</span>';
+                    } else if (entry.rank === 3) {
+                        badge = '<span class="badge bg-danger">🥉</span>';
+                    } else {
+                        badge = `<span class="badge bg-light text-dark">#${entry.rank}</span>`;
+                    }
+                    
+                    // --- Avatar Logic Start (JS) --- 
+                    let avatarUrl = 'https://cdn.discordapp.com/embed/avatars/0.png'; // Default avatar
+                    if (entry.avatar) {
+                        if (entry.avatar.startsWith('http')) {
+                            // Avatar field already contains the full URL
+                            avatarUrl = entry.avatar;
+                        } else {
+                            // Assume avatar field is just the hash, construct the URL
+                            avatarUrl = `https://cdn.discordapp.com/avatars/${entry.discord_id}/${entry.avatar}.png`;
+                        }
+                    }
+                    // --- Avatar Logic End (JS) --- 
+                    
+                    html += `
+                        <tr>
+                            <td>${badge}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="${avatarUrl}" 
+                                         alt="${entry.username}" 
+                                         class="rounded-circle me-2"
+                                         style="width: 32px; height: 32px;" 
+                                         onerror="this.onerror=null; this.src='https://cdn.discordapp.com/embed/avatars/0.png'"> {# Fallback on error #}
+                                    <span>${entry.username}</span>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <span class="badge bg-primary">${entry.level}</span>
+                            </td>
+                            <td class="text-end">${entry.xp.toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+                
+                leaderboardBody.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error fetching leaderboard data:', error);
+                leaderboardBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-4">
+                            <div class="text-danger">
+                                <i class="fas fa-exclamation-circle fa-2x mb-3"></i>
+                                <p>Error loading leaderboard data</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
         });
     });
 });
