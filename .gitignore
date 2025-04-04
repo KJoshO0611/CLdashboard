@@ -1,8 +1,8 @@
 .venv
 .env
 __pycache__
-.env/local
-.env/example
+.env.local
+.env.example
 logs/
 run_local.py
 create_local_db.sql
