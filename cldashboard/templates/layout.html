@@ -73,7 +73,7 @@
                                 <li><a class="dropdown-item" href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
                                 <li><a class="dropdown-item" href="{{ url_for('dashboard.profile') }}">My Profile</a></li>
                                 <li><a class="dropdown-item" href="{{ url_for('dashboard.guild_list') }}">My Servers</a></li>
-                                {% if current_user.is_admin %}
+                                {% if current_user.is_owner %}
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ url_for('admin.index') }}">Admin Panel</a></li>
                                 {% endif %}

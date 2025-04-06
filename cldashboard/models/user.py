@@ -1,20 +1,20 @@
 from cldashboard import db, login_manager
 from flask_login import UserMixin
 from datetime import datetime
-from sqlalchemy import cast, BigInteger, Column, String, DateTime, func, ForeignKey, Integer, Boolean, JSON
+from sqlalchemy import Column, String, DateTime, func, ForeignKey, Integer, Boolean, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
 
 @login_manager.user_loader
 def load_user(user_id):
-    # Convert string user_id from session to integer for database lookup
-    return User.query.get(int(user_id))
+    # Primary key is now String
+    return User.query.get(str(user_id))
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
     
-    # Using BigInteger to match the BIGINT type in PostgreSQL
-    discord_id = Column(BigInteger, primary_key=True)
+    # Change ID to String
+    discord_id = Column(String, primary_key=True)
     username = Column(String(255), nullable=False)
     discriminator = Column(String(4))
     email = Column(String(255))
@@ -24,11 +24,10 @@ class User(db.Model, UserMixin):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     last_login = Column(DateTime(timezone=True))
     
-    # This is needed for Flask-Login to work correctly with a non-integer id
+    # Flask-Login get_id should return the PK as is (String)
     def get_id(self):
-        return str(self.discord_id)
+        return self.discord_id
     
-    # User's guilds (Discord servers)
     guilds = relationship('Guild', secondary='user_guild', backref='users')
     
     def __repr__(self):
@@ -52,26 +51,36 @@ class User(db.Model, UserMixin):
     
     def can_view_guild(self, guild_id):
         """Check if user can view a specific guild"""
+        # IDs are now strings, compare directly.
+        # Ensure input guild_id is treated as string.
+        target_guild_id = str(guild_id) 
+            
         for guild in self.guilds:
-            if str(guild.guild_id) == str(guild_id):
+            # Both guild.guild_id and target_guild_id are strings
+            if guild.guild_id == target_guild_id:
                 return True
         return False
     
     def can_manage_guild(self, guild_id):
-        """Check if user can manage a specific guild"""
+        """Check if user can manage a specific guild based on their dashboard role"""
+        # Bot owner can manage any guild visible to the bot
         if self.is_owner:
             return True
+        
+        # Check if user has the global admin role from the dashboard perspective
+        if not self.is_admin: # is_admin checks for 'admin' in self.role list
+            return False
             
-        for guild in self.guilds:
-            if str(guild.guild_id) == str(guild_id):
-                # Check if user is admin or owner of the guild
-                return guild.user_has_permission(self.discord_id, ['admin', 'owner'])
-        return False
+        # If they are an admin, check if they actually have access to this specific guild
+        # (i.e., is it one of the mutual guilds determined during login?)
+        # This uses the corrected can_view_guild logic
+        return self.can_view_guild(guild_id)
         
     @staticmethod
     def get_or_create(discord_user):
         """Get existing user or create a new one from Discord user data"""
-        user_id = int(discord_user['id'])
+        # ID from Discord is string, model PK is String
+        user_id = str(discord_user['id'])
         user = User.query.filter_by(discord_id=user_id).first()
         
         if not user:
@@ -96,37 +105,34 @@ class User(db.Model, UserMixin):
             
         return user
 
-    def get_int_id(self):
-        """Return the discord_id as an integer for database queries"""
-        return self.discord_id
-
 
 class Guild(db.Model):
     __tablename__ = 'guilds'
     
-    # Using BigInteger to match the BIGINT type in PostgreSQL
-    guild_id = Column(BigInteger, primary_key=True)
+    # Change IDs to String
+    guild_id = Column(String, primary_key=True)
     name = Column(String(255), nullable=False)
     icon = Column(String(255))
-    owner_id = Column(BigInteger) # Nullable if owner info isn't always present
+    owner_id = Column(String) # Nullable if owner info isn't always present
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    # Guild settings - use SQLAlchemy's cast directly
+    # Relationships - No cast needed as both sides are now String
     settings = relationship('ServerConfig', backref='guild', uselist=False, 
                              foreign_keys="ServerConfig.guild_id",
-                             primaryjoin="Guild.guild_id == cast(ServerConfig.guild_id, BigInteger)")
+                             primaryjoin="Guild.guild_id == ServerConfig.guild_id") 
     xp_settings = relationship('ServerXpSettings', backref='guild', uselist=False,
                                 foreign_keys="ServerXpSettings.guild_id",
-                                primaryjoin="Guild.guild_id == cast(ServerXpSettings.guild_id, BigInteger)")
+                                primaryjoin="Guild.guild_id == ServerXpSettings.guild_id")
     
     def __repr__(self):
         return f"Guild('{self.name}', '{self.guild_id}')"
         
     def user_has_permission(self, user_discord_id, required_roles):
         """Check if a user has any of the required roles in this guild"""
-        # Convert string ID to integer if needed
-        user_id = int(user_discord_id) if isinstance(user_discord_id, str) else user_discord_id
+        # user_discord_id is already string
+        user_id = str(user_discord_id)
         
+        # guild_id is already string
         membership = GuildMember.query.filter_by(
             guild_id=self.guild_id, 
             user_id=user_id
@@ -140,19 +146,19 @@ class Guild(db.Model):
         return True
 
 
-# Association table for User-Guild many-to-many relationship
+# Association table - Use String for keys
 user_guild = db.Table('user_guild',
-    db.Column('user_id', db.BigInteger, db.ForeignKey('users.discord_id'), primary_key=True),
-    db.Column('guild_id', db.BigInteger, db.ForeignKey('guilds.guild_id'), primary_key=True)
+    db.Column('user_id', db.String, db.ForeignKey('users.discord_id'), primary_key=True),
+    db.Column('guild_id', db.String, db.ForeignKey('guilds.guild_id'), primary_key=True)
 )
 
 
 class GuildMember(db.Model):
-    __tablename__ = 'guild_members'
+    __tablename__ = 'guild_members' # Assuming bot manages this, check bot schema
     
-    # Composite primary key matching the bot database using BigInteger
-    guild_id = Column(BigInteger, db.ForeignKey('guilds.guild_id'), primary_key=True)
-    user_id = Column(BigInteger, db.ForeignKey('users.discord_id'), primary_key=True)
+    # Change IDs to String (if this model is used by dashboard)
+    guild_id = Column(String, db.ForeignKey('guilds.guild_id'), primary_key=True)
+    user_id = Column(String, db.ForeignKey('users.discord_id'), primary_key=True)
     
     # Fields from the bot's database
     level = Column(db.Integer, default=1)
@@ -170,7 +176,8 @@ class GuildMember(db.Model):
 class ServerConfig(db.Model):
     __tablename__ = 'server_config'
     
-    guild_id = Column(BigInteger, db.ForeignKey('guilds.guild_id', ondelete='CASCADE'), primary_key=True)
+    # ID is already String, ForeignKey points to Guild.guild_id (now String)
+    guild_id = Column(String, db.ForeignKey('guilds.guild_id'), primary_key=True)
     
     # Channel Settings
     level_up_channel = Column(db.String(20), nullable=True)
@@ -186,7 +193,8 @@ class ServerConfig(db.Model):
 class ServerXpSettings(db.Model):
     __tablename__ = 'server_xp_settings'
     
-    guild_id = Column(BigInteger, db.ForeignKey('guilds.guild_id', ondelete='CASCADE'), primary_key=True)
+    # ID is already String, ForeignKey points to Guild.guild_id (now String)
+    guild_id = Column(String, db.ForeignKey('guilds.guild_id'), primary_key=True)
     
     # XP Settings
     min_xp = Column(db.Integer, default=5)
