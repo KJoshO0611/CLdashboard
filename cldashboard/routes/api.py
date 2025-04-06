@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from cldashboard import db
 from cldashboard.models.user import Guild, ServerConfig, ServerXpSettings, GuildMember, User
 from cldashboard.middleware.auth import owner_required, admin_required, guild_admin_required
+from cldashboard.utils.xp_utils import calculate_cumulative_xp, total_xp_for_level
 from datetime import datetime, timedelta
 import json
 import uuid
@@ -28,40 +29,49 @@ def api_error(message="Error", code=400):
 @api.route('/api/guilds/<string:guild_id>/stats')
 @login_required
 def get_guild_stats(guild_id):
-    """Get statistics for a specific guild"""
+    """Get statistics for a specific guild using the levels table"""
     if not current_user.can_view_guild(guild_id):
         return api_error("You do not have permission to view this guild", 403)
     
     guild = Guild.query.filter_by(guild_id=guild_id).first()
     if not guild:
-        return api_error("Guild not found", 404)
-    
-    member_count = GuildMember.query.filter_by(guild_id=guild_id).count()
-    
-    one_day_ago = (datetime.now() - timedelta(days=1)).timestamp()
-    active_users = db.session.execute(
-        text('SELECT COUNT(DISTINCT user_id) FROM guild_members WHERE guild_id = :guild_id AND last_xp_gain >= :time_limit'),
-        {'guild_id': guild_id, 'time_limit': one_day_ago}
-    ).scalar() or 0
-    
-    total_xp_result = db.session.execute(
-        text('SELECT SUM(xp) FROM guild_members WHERE guild_id = :guild_id'),
-        {'guild_id': guild_id}
-    ).scalar() or 0
-    total_xp = int(total_xp_result)
-    
-    total_levels_result = db.session.execute(
-        text('SELECT SUM(level) FROM guild_members WHERE guild_id = :guild_id'),
-        {'guild_id': guild_id}
-    ).scalar() or 0
-    total_levels = int(total_levels_result)
-    
-    return api_success({
-        "member_count": member_count,
-        "active_users": active_users,
-        "total_xp": total_xp,
-        "total_levels": total_levels
-    })
+        return api_error("Guild not found or bot is not in this guild", 404)
+
+    try:
+        member_count = db.session.execute(
+            text("SELECT COUNT(DISTINCT user_id) FROM levels WHERE guild_id = :guild_id"),
+            {'guild_id': guild_id}
+        ).scalar() or 0
+        
+        one_day_ago_ts = (datetime.now() - timedelta(days=1)).timestamp()
+        active_users = db.session.execute(
+            text("""SELECT COUNT(DISTINCT user_id) FROM levels 
+                    WHERE guild_id = :guild_id AND last_xp_time >= :time_limit"""
+                 ),
+            {'guild_id': guild_id, 'time_limit': one_day_ago_ts}
+        ).scalar() or 0
+        
+        xp_levels_data = db.session.execute(
+            text("SELECT level, xp FROM levels WHERE guild_id = :guild_id"),
+            {'guild_id': guild_id}
+        ).fetchall()
+        
+        total_cumulative_xp = sum(calculate_cumulative_xp(row.level, row.xp) for row in xp_levels_data)
+        
+        total_levels_earned = db.session.execute(
+            text("SELECT SUM(level) FROM levels WHERE guild_id = :guild_id"),
+            {'guild_id': guild_id}
+        ).scalar() or 0
+        
+        return api_success({
+            "member_count": member_count,
+            "active_users": active_users,
+            "total_xp": int(total_cumulative_xp),
+            "total_levels": int(total_levels_earned)
+        })
+    except Exception as e:
+        print(f"Error fetching guild stats for {guild_id}: {e}")
+        return api_error("Failed to fetch guild statistics.")
 
 # Guild Info API
 @api.route('/api/guilds/<string:guild_id>/info')
@@ -75,35 +85,31 @@ def get_guild_info(guild_id):
     if not guild:
         return api_error("Guild not found", 404)
     
-    owner = User.query.filter_by(discord_id=guild.owner_id).first()
-    owner_name = owner.username if owner else "Unknown"
+    owner_name = "Unknown"
+    if guild.owner_id:
+        owner = User.query.filter_by(discord_id=guild.owner_id).first()
+        if owner:
+            owner_name = owner.username
     
-    member_count = GuildMember.query.filter_by(guild_id=guild_id).count()
+    created_at_iso = None
+    if guild.created_at:
+        created_at_iso = guild.created_at.isoformat()
+    
+    region = guild.preferred_locale or "Unknown"
+    channel_count = guild.channel_count if guild.channel_count is not None else "N/A"
     
     try:
-        channel_count = db.session.execute(
-            text('SELECT COUNT(*) FROM channels WHERE guild_id = :guild_id'),
+        member_count = db.session.execute(
+            text("SELECT COUNT(DISTINCT user_id) FROM levels WHERE guild_id = :guild_id"),
             {'guild_id': guild_id}
         ).scalar() or 0
-    except:
-        channel_count = min(10 + (member_count // 20), 50)
-    
-    region = "Unknown"
-    if hasattr(guild, 'region') and guild.region:
-        region = guild.region
-    else:
-        region = "US East"
-    
-    created_at = None
-    if hasattr(guild, 'created_at') and guild.created_at:
-        if isinstance(guild.created_at, datetime):
-            created_at = guild.created_at.isoformat()
-        else:
-            created_at = guild.created_at
-    
+    except Exception as e:
+        print(f"Error fetching member count for guild info {guild_id}: {e}")
+        member_count = "Error"
+
     return api_success({
         "owner": owner_name,
-        "created_at": created_at,
+        "created_at": created_at_iso,
         "region": region,
         "channels": channel_count,
         "member_count": member_count
@@ -113,7 +119,7 @@ def get_guild_info(guild_id):
 @api.route('/api/guilds/<string:guild_id>/activity')
 @login_required
 def get_guild_activity(guild_id):
-    """Get recent activity for a specific guild"""
+    """Get recent activity (XP gains, achievements) for a specific guild"""
     if not current_user.can_view_guild(guild_id):
         return api_error("You do not have permission to view this guild", 403)
     
@@ -121,25 +127,33 @@ def get_guild_activity(guild_id):
     if not guild:
         return api_error("Guild not found", 404)
     
+    activities = []
+    
     try:
-        recent_xp = db.session.execute(
+        recent_xp_users = db.session.execute(
             text('''
-            SELECT 
-                u.username, 
-                gm.xp - gm.previous_xp as xp_gained,
-                gm.last_xp_gain
-            FROM guild_members gm
-            JOIN users u ON gm.user_id = u.discord_id
-            WHERE gm.guild_id = :guild_id 
-            AND gm.last_xp_gain IS NOT NULL
-            ORDER BY gm.last_xp_gain DESC
-            LIMIT 5
+            SELECT u.username, lvl.level, lvl.last_xp_time
+            FROM levels lvl
+            JOIN users u ON lvl.user_id = u.discord_id
+            WHERE lvl.guild_id = :guild_id 
+            AND lvl.last_xp_time IS NOT NULL
+            ORDER BY lvl.last_xp_time DESC
+            LIMIT 5 
             '''), 
             {'guild_id': guild_id}
         ).fetchall()
+        
+        for xp_user in recent_xp_users:
+            if xp_user.last_xp_time:
+                time_ago = format_time_ago((datetime.now() - datetime.fromtimestamp(xp_user.last_xp_time)).total_seconds())
+                activities.append({
+                    "description": f"{xp_user.username} recently gained XP",
+                    "time": time_ago,
+                    "details": f"Reached Level {xp_user.level}"
+                })
+
     except Exception as e:
-        print(f"Error fetching recent XP: {e}")
-        recent_xp = []
+        print(f"Error fetching recent XP activity for {guild_id}: {e}")
     
     try:
         recent_achievements = db.session.execute(
@@ -155,46 +169,49 @@ def get_guild_activity(guild_id):
             AND ua.completed = TRUE
             AND ua.completed_at IS NOT NULL
             ORDER BY ua.completed_at DESC
-            LIMIT 5
+            LIMIT 5 
             '''),
             {'guild_id': guild_id}
         ).fetchall()
+        
+        for achievement in recent_achievements:
+            if achievement.completed_at:
+                time_ago = format_time_ago((datetime.now() - achievement.completed_at).total_seconds())
+                activities.append({
+                    "description": f"{achievement.username} earned achievement",
+                    "time": time_ago,
+                    "details": achievement.achievement_name
+                })
+                
     except Exception as e:
-        print(f"Error fetching recent achievements: {e}")
-        recent_achievements = []
+        print(f"Error fetching recent achievements for {guild_id}: {e}")
+
+    try:
+        activities = sorted(activities, key=lambda x: parse_time_ago_seconds(x["time"]))[:5]
+    except Exception as sort_e:
+        print(f"Error sorting activities for {guild_id}: {sort_e}")
     
-    activities = []
-    
-    for xp in recent_xp:
-        if hasattr(xp, 'last_xp_gain') and xp.last_xp_gain:
-            time_ago = format_time_ago((datetime.now() - datetime.fromtimestamp(xp.last_xp_gain)).total_seconds())
-            activities.append({
-                "description": f"{xp.username} gained XP",
-                "time": time_ago,
-                "details": f"+{xp.xp_gained} XP"
-            })
-    
-    for achievement in recent_achievements:
-        if hasattr(achievement, 'completed_at') and achievement.completed_at:
-            time_ago = format_time_ago((datetime.now() - achievement.completed_at).total_seconds())
-            activities.append({
-                "description": f"{achievement.username} earned achievement",
-                "time": time_ago,
-                "details": achievement.achievement_name
-            })
-    
-    activities = sorted(activities, key=lambda x: parse_time_ago(x["time"]))[:5]
-    
-    if len(activities) == 0:
+    if not activities:
         return api_success([{
-            "description": "No recent activity",
+            "description": "No recent activity tracked",
             "time": "just now",
-            "details": "Actions will appear here as members earn XP and achievements"
+            "details": "Level ups and achievements will appear here."
         }])
     
     return api_success(activities)
 
-# Helper functions for time formatting
+def parse_time_ago_seconds(time_str):
+    if "just now" in time_str: return 0
+    parts = time_str.split()
+    if len(parts) < 3: return 999999
+    value = int(parts[0])
+    unit = parts[1]
+    if "minute" in unit: return value * 60
+    if "hour" in unit: return value * 3600
+    if "day" in unit: return value * 86400
+    return 999999
+
+# Helper function for time formatting
 def format_time_ago(seconds):
     """Format a time difference in seconds to a human-readable string"""
     if seconds < 60:
@@ -208,26 +225,6 @@ def format_time_ago(seconds):
     else:
         days = int(seconds / 86400)
         return f"{days} day{'s' if days != 1 else ''} ago"
-
-def parse_time_ago(time_str):
-    """Convert a time_ago string back to approximate seconds for sorting"""
-    if time_str == "just now":
-        return 0
-    parts = time_str.split()
-    if len(parts) < 3:
-        return 99999999
-    
-    value = int(parts[0])
-    unit = parts[1]
-    
-    if unit.startswith("minute"):
-        return value * 60
-    elif unit.startswith("hour"):
-        return value * 3600
-    elif unit.startswith("day"):
-        return value * 86400
-    else:
-        return 99999999
 
 # Guild Settings API
 @api.route('/api/guilds/<string:guild_id>/settings', methods=['GET'])
@@ -302,81 +299,103 @@ def update_guild_settings(guild_id):
     
     return api_success(message="Settings updated successfully")
 
-# Leaderboard API
-@api.route('/api/guilds/<string:guild_id>/leaderboard', methods=['GET'])
+# Guild Leaderboard API
+@api.route('/api/guilds/<string:guild_id>/leaderboard')
 @login_required
 def get_guild_leaderboard(guild_id):
-    """Get leaderboard for a specific guild"""
+    """Get leaderboard data for a specific guild with cumulative XP."""
     if not current_user.can_view_guild(guild_id):
         return api_error("You do not have permission to view this guild", 403)
     
-    guild = Guild.query.filter_by(guild_id=guild_id).first()
-    
-    if not guild:
-        return api_error("Guild not found", 404)
-    
-    period = request.args.get('period', 'all')
-    
     try:
+        # Fetch necessary data from DB, limit to potential top users
+        # Order by level/xp as a pre-filter, we will re-sort later by cumulative XP
         query_text = '''
             SELECT 
                 u.discord_id, 
                 u.username, 
                 u.avatar, 
-                gm.level, 
-                gm.xp 
-            FROM guild_members gm
-            JOIN users u ON gm.user_id = u.discord_id
-            WHERE gm.guild_id = :guild_id
-            ORDER BY gm.xp DESC, gm.level DESC
-            LIMIT 100
+                lvl.level, 
+                lvl.xp 
+            FROM levels lvl
+            JOIN users u ON lvl.user_id = u.discord_id
+            WHERE lvl.guild_id = :guild_id
+            ORDER BY lvl.level DESC, lvl.xp DESC -- Pre-sort to get likely top candidates
+            LIMIT 100 -- Fetch top 100 based on pre-sort
         '''
         
         params = {'guild_id': guild_id}
-        now_epoch = datetime.now().timestamp()
-        if period == 'week':
-            query_text += ' AND gm.last_xp_time >= :start_epoch'
-            params['start_epoch'] = now_epoch - (7 * 24 * 60 * 60)
-        elif period == 'month':
-            query_text += ' AND gm.last_xp_time >= :start_epoch'
-            params['start_epoch'] = now_epoch - (30 * 24 * 60 * 60)
         
-        query_text += '''
-            ORDER BY rank ASC
-            LIMIT 100
-        '''
+        leaderboard_raw = db.session.execute(text(query_text), params).fetchall()
         
-        leaderboard_data = db.session.execute(text(query_text), params).fetchall()
-        
-        formatted_leaderboard = []
-        for entry in leaderboard_data:
-            formatted_leaderboard.append({
-                'rank': entry.rank,
-                'user_id': entry.discord_id,
-                'username': entry.username,
-                'avatar': entry.avatar,
-                'level': entry.level,
-                'xp': entry.xp
+        # Calculate cumulative XP and store in a list of dicts
+        leaderboard_processed = []
+        for user_data in leaderboard_raw:
+            cumulative_xp = calculate_cumulative_xp(user_data.level, user_data.xp)
+            leaderboard_processed.append({
+                "user_id": user_data.discord_id,
+                "username": user_data.username,
+                "avatar": user_data.avatar,
+                "level": user_data.level,
+                "xp": user_data.xp, # Keep current level XP if needed
+                "cumulative_xp": cumulative_xp
             })
+            
+        # Sort the processed list by cumulative XP
+        leaderboard_sorted = sorted(leaderboard_processed, key=lambda x: x['cumulative_xp'], reverse=True)
+        
+        # Format final data with ranks based on the sorted list
+        formatted_leaderboard = [
+            {
+                "rank": idx + 1,
+                "user_id": user['user_id'],
+                "username": user['username'],
+                "avatar": user['avatar'],
+                "level": user['level'],
+                "xp": int(user['cumulative_xp']) # Cast cumulative XP to int here
+            }
+            for idx, user in enumerate(leaderboard_sorted)
+        ]
         
         return api_success(formatted_leaderboard)
     except Exception as e:
-        print(f"Error fetching leaderboard: {e}")
+        # Log the detailed error
+        print(f"Error fetching leaderboard for guild {guild_id}: {e}")
+        # Also print the query and params for debugging
+        # print(f"Failed Query: {query_text}") # Be careful logging raw SQL
+        # print(f"Failed Params: {params}")
         return api_error(f"Failed to fetch leaderboard data: {str(e)}")
 
 # User Stats API
 @api.route('/api/users/me/stats', methods=['GET'])
 @login_required
 def get_user_stats():
-    """Get stats for the current user"""
+    """Get stats for the current user, including cumulative XP and total voice time"""
     try:
-        user_id = current_user.discord_id
+        user_id = current_user.discord_id # String ID
         
-        total_xp = db.session.execute(
-            text('SELECT SUM(xp) FROM guild_members WHERE user_id = :user_id'),
-            {'user_id': user_id}
-        ).scalar() or 0
+        # Fetch level, xp, and voice time from the 'levels' table for all user's guilds
+        query = text("""
+            SELECT level, xp, voice_time_seconds 
+            FROM levels 
+            WHERE user_id = :user_id
+        """)
+        results = db.session.execute(query, {'user_id': user_id}).fetchall()
         
+        total_cumulative_xp = 0
+        total_voice_seconds = 0
+        total_guilds_with_levels = 0
+        total_level_sum = 0
+        
+        for record in results:
+            total_cumulative_xp += calculate_cumulative_xp(record.level, record.xp)
+            total_voice_seconds += record.voice_time_seconds or 0
+            total_guilds_with_levels += 1
+            total_level_sum += record.level
+            
+        avg_level = round(total_level_sum / total_guilds_with_levels, 1) if total_guilds_with_levels > 0 else 0
+
+        # Count total achievements (as before)
         try:
             total_achievements_result = db.session.execute(
                 text('SELECT COUNT(*) FROM user_achievements WHERE user_id = :user_id AND completed = TRUE'),
@@ -385,39 +404,29 @@ def get_user_stats():
         except Exception as achievement_error:
             print(f"Error fetching achievements: {achievement_error}")
             total_achievements_result = 0
-            
         total_achievements = int(total_achievements_result)
         
-        try:
-            total_guilds = len(current_user.guilds)
-        except Exception as guild_error:
-            print(f"Error fetching guilds via relationship: {guild_error}")
-            total_guilds = db.session.execute(
-                text('SELECT COUNT(*) FROM user_guild WHERE user_id = :user_id'),
-                {'user_id': user_id}
-            ).scalar() or 0
-        
-        avg_level_result = db.session.execute(
-            text('SELECT COALESCE(AVG(level), 0) FROM guild_members WHERE user_id = :user_id'),
-            {'user_id': user_id}
-        ).scalar() or 0
-        avg_level = round(float(avg_level_result), 1)
+        # Get total guilds count from relationship
+        total_guilds = len(current_user.guilds)
         
         return api_success({
             "username": current_user.username,
-            "total_xp": int(total_xp),
+            "total_xp": int(total_cumulative_xp),
             "total_guilds": total_guilds,
             "achievements": total_achievements,
-            "average_level": avg_level
+            "average_level": avg_level, 
+            "total_voice_seconds": total_voice_seconds
         })
     except Exception as e:
         print(f"Error fetching user stats: {e}")
+        # Fallback
         return api_success({
             "username": current_user.username,
             "total_xp": 0,
-            "total_guilds": 0,
+            "total_guilds": len(current_user.guilds), # Still show guilds if possible 
             "achievements": 0,
-            "average_level": 0
+            "average_level": 0,
+            "total_voice_seconds": 0
         })
 
 # Admin APIs
@@ -468,8 +477,17 @@ def get_guild_achievements(guild_id):
     if not guild:
         return api_error("Guild not found", 404)
     
-    member_count = GuildMember.query.filter_by(guild_id=guild_id).count()
+    # Get total member count for the guild from the levels table
+    try:
+        member_count = db.session.execute(
+            text("SELECT COUNT(DISTINCT user_id) FROM levels WHERE guild_id = :guild_id"),
+            {'guild_id': guild_id}
+        ).scalar() or 0
+    except Exception as e:
+        print(f"Error fetching member count for achievements page (guild {guild_id}): {e}")
+        member_count = 0 # Default to 0 on error
     
+    # Get achievements from the database (The rest of this query seems okay)
     achievements = db.session.execute(text('''
         SELECT 
             a.id,
@@ -496,6 +514,7 @@ def get_guild_achievements(guild_id):
         'user_id': current_user.discord_id
     }).fetchall()
     
+    # Format achievements for the frontend
     formatted_achievements = []
     for achievement in achievements:
         formatted_achievements.append({
@@ -509,7 +528,7 @@ def get_guild_achievements(guild_id):
             "completed": achievement.completed,
             "completed_at": achievement.completed_at.isoformat() if achievement.completed_at else None,
             "members_completed": achievement.members_completed or 0,
-            "member_count": member_count
+            "member_count": member_count # Use the count fetched from levels
         })
     
     return api_success(formatted_achievements)
@@ -732,7 +751,7 @@ def join_guild_event(guild_id, event_id):
 @api.route('/api/guilds/<string:guild_id>/activity-chart')
 @login_required
 def get_guild_activity_chart(guild_id):
-    """Get activity chart data for a specific guild"""
+    """Get activity chart data (users gaining XP) for a specific guild"""
     if not current_user.can_view_guild(guild_id):
         return api_error("You do not have permission to view this guild", 403)
     
@@ -740,24 +759,27 @@ def get_guild_activity_chart(guild_id):
     if not guild:
         return api_error("Guild not found", 404)
     
+    # Get activity data for the past 7 days
     days = 7
-    today = datetime.now().date()
     labels = []
-    data = []
+    xp_data = [] # Renamed from 'data'
+    message_data = [] # Placeholder data for messages
     
     try:
-        for i in range(days - 1, -1, -1):
-            date = today - timedelta(days=i)
-            day_start = datetime.combine(date, datetime.min.time()).timestamp()
-            day_end = datetime.combine(date, datetime.max.time()).timestamp()
+        for i in range(days - 1, -1, -1):  # Go from 6 days ago to today
+            target_date = datetime.now().date() - timedelta(days=i)
+            # Convert date to start/end epoch timestamps for the day
+            day_start = datetime.combine(target_date, datetime.min.time()).timestamp()
+            day_end = datetime.combine(target_date, datetime.max.time()).timestamp()
             
+            # Count users who gained XP on this day
             count = db.session.execute(
                 text('''
-                SELECT COUNT(*) 
-                FROM guild_members 
-                WHERE guild_id = :guild_id
-                AND last_xp_gain >= :day_start 
-                AND last_xp_gain <= :day_end
+                    SELECT COUNT(DISTINCT user_id) 
+                    FROM levels 
+                    WHERE guild_id = :guild_id 
+                    AND last_xp_time >= :day_start 
+                    AND last_xp_time < :day_end
                 '''),
                 {
                     'guild_id': guild_id,
@@ -766,33 +788,52 @@ def get_guild_activity_chart(guild_id):
                 }
             ).scalar() or 0
             
-            label = date.strftime('%a')
-            
+            label = target_date.strftime('%a') # Short day name (Mon, Tue, etc.)
             labels.append(label)
-            data.append(count)
+            xp_data.append(count)
+            # Add placeholder message data (e.g., scaling with XP users)
+            message_data.append(count * 10 + 50 if count > 0 else 0) 
+            
     except Exception as e:
-        print(f"Error fetching activity chart data: {e}")
+        print(f"Error fetching activity chart data for guild {guild_id}: {e}")
+        # Return default data in case of error
+        default_labels = [(datetime.now().date() - timedelta(days=i)).strftime('%a') for i in range(days - 1, -1, -1)]
         return api_success({
-            "labels": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-            "data": [0, 0, 0, 0, 0, 0, 0]
+            "labels": default_labels,
+            "datasets": [
+                {"label": "Active Users (XP Gain)", "data": [0]*days},
+                {"label": "Messages Sent", "data": [0]*days} # Placeholder
+            ]
         })
-    
-    return api_success({
+        
+    # Structure data for Chart.js
+    chart_data = {
         "labels": labels,
-        "data": data
-    })
+        "datasets": [
+            {
+                "label": "Active Users (XP Gain)",
+                "data": xp_data,
+                "borderColor": "rgba(255, 102, 102, 1)", # Red
+                "backgroundColor": "rgba(255, 102, 102, 0.2)",
+                "fill": True,
+                "tension": 0.4
+            },
+            {
+                "label": "Messages Sent (Est.)", # Indicate it's an estimate/placeholder
+                "data": message_data,
+                "borderColor": "rgba(0, 204, 204, 1)", # Cyan
+                "backgroundColor": "rgba(0, 204, 204, 0.2)",
+                "fill": True,
+                "tension": 0.4
+            }
+        ]
+    }
+    
+    return api_success(chart_data)
 
-# Function to assist with database BIGINT to string conversions
+# Helper function (ensure it exists or move if needed)
 def query_with_string_ids(query_text, params):
     """Execute SQL query with string ID parameters, ensuring proper type conversion"""
     updated_params = params.copy()
-    
-    if 'guild_id' in updated_params and updated_params['guild_id'] is not None:
-        if isinstance(updated_params['guild_id'], str):
-            updated_params['guild_id'] = int(updated_params['guild_id'])
-        
-    if 'user_id' in updated_params and updated_params['user_id'] is not None:
-        if isinstance(updated_params['user_id'], str):
-            updated_params['user_id'] = int(updated_params['user_id'])
-    
+    # No longer needed as all IDs are strings
     return db.session.execute(text(query_text), updated_params) 

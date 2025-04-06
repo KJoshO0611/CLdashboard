@@ -1,7 +1,7 @@
 from flask import Blueprint, redirect, url_for, session, flash, request, Response
 from flask_login import login_user, logout_user, current_user, login_required
 from cldashboard import discord, db
-from cldashboard.models.user import User, Guild
+from cldashboard.models.user import User, Guild, user_guild
 import os
 import requests
 import json
@@ -176,17 +176,20 @@ def discord_callback():
 
             # Remove old associations (using string IDs)
             if guilds_to_remove:
-                # Pass list of strings directly to ANY clause
-                delete_stmt = delete(text("user_guild")).where(
-                    text("user_id = :user_id AND guild_id = ANY(:guild_ids)")
+                # Use the imported user_guild Table object directly
+                delete_stmt = delete(user_guild).where(
+                    user_guild.c.user_id == db_user_id
+                ).where(
+                    user_guild.c.guild_id.in_(list(guilds_to_remove)) # Use .in_() for list comparison
                 )
-                db.session.execute(delete_stmt, {'user_id': db_user_id, 'guild_ids': list(guilds_to_remove)})
+                db.session.execute(delete_stmt) # Parameters are implicitly handled by where clause
                 print(f"Removed guilds {guilds_to_remove} for user {db_user_id}")
 
             # Add new associations (using string IDs)
             if guilds_to_add:
                 insert_values = [{'user_id': db_user_id, 'guild_id': gid} for gid in guilds_to_add]
                 for values in insert_values:
+                     # Using text here is fine for simple INSERT ON CONFLICT
                      db.session.execute(
                          text('INSERT INTO user_guild (user_id, guild_id) VALUES (:user_id, :guild_id) ON CONFLICT DO NOTHING'),
                          values

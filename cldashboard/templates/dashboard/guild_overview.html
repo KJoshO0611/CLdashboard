@@ -175,176 +175,150 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Helper function to format numbers with commas
+    const guildId = "{{ guild.guild_id }}"; // Get guild ID from Jinja
+    
+    // Elements to update
+    const memberCountEl = document.getElementById('member-count');
+    const activeUsersEl = document.getElementById('active-users');
+    const totalXpEl = document.getElementById('total-xp');
+    const totalLevelsEl = document.getElementById('total-levels');
+    const serverOwnerEl = document.getElementById('server-owner');
+    const serverCreatedEl = document.getElementById('server-created');
+    const serverRegionEl = document.getElementById('server-region');
+    const serverChannelsEl = document.getElementById('server-channels');
+    const recentActivityEl = document.getElementById('recent-activity');
+    const activityChartCtx = document.getElementById('activity-chart')?.getContext('2d');
+    let activityChart = null;
+
+    // Helper to format numbers
     function formatNumber(num) {
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return num != null ? num.toLocaleString() : 'N/A';
     }
-
-    // Helper function to format time ago
-    function timeAgo(dateString) {
-        const date = new Date(dateString);
-        const now = new Date();
-        const seconds = Math.floor((now - date) / 1000);
-        
-        let interval = Math.floor(seconds / 31536000);
-        if (interval > 1) return interval + " years ago";
-        
-        interval = Math.floor(seconds / 2592000);
-        if (interval > 1) return interval + " months ago";
-        
-        interval = Math.floor(seconds / 86400);
-        if (interval > 1) return interval + " days ago";
-        
-        interval = Math.floor(seconds / 3600);
-        if (interval > 1) return interval + " hours ago";
-        
-        interval = Math.floor(seconds / 60);
-        if (interval > 1) return interval + " minutes ago";
-        
-        return "just now";
-    }
-
-    // Helper function to handle API errors
-    function handleApiError(element, error) {
-        element.innerHTML = `<span class="text-danger">Error loading data</span>`;
-        console.error('API Error:', error);
-    }
-
-    // Initialize activity chart
-    const ctx = document.getElementById('activity-chart').getContext('2d');
-    const chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [],  // Will be populated from API
-            datasets: [{
-                label: 'Server Activity',
-                data: [],  // Will be populated from API
-                borderColor: '#6f42c1',
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+    
+    // Helper to format ISO date string
+    function formatDate(isoString) {
+        if (!isoString) return 'N/A';
+        try {
+            return new Date(isoString).toLocaleDateString();
+        } catch (e) {
+            return 'Invalid Date';
         }
-    });
+    }
     
-    // Fetch activity chart data
-    fetch(`/api/guilds/{{ guild.guild_id }}/activity-chart`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                chart.data.labels = data.data.labels;
-                chart.data.datasets[0].data = data.data.data;
-                chart.update();
-            } else {
-                throw new Error(data.message);
-            }
-        })
-        .catch(error => {
-            console.error('API Error (activity chart):', error);
-            // Display error message in chart container
-            document.getElementById('chart-container').innerHTML = `
-                <div class="alert alert-danger m-3">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    Error loading activity data
-                </div>
-            `;
-        });
+    // Helper to show loading error
+    function showError(element, defaultText = 'Error') {
+         if(element) element.textContent = defaultText;
+    }
+
+    // 1. Fetch Guild Stats
+    API.get(`/api/guilds/${guildId}/stats`, 
+        function(data) { // Success
+            if(memberCountEl) memberCountEl.textContent = formatNumber(data.member_count);
+            if(activeUsersEl) activeUsersEl.textContent = formatNumber(data.active_users);
+            if(totalXpEl) totalXpEl.textContent = formatNumber(data.total_xp);
+            if(totalLevelsEl) totalLevelsEl.textContent = formatNumber(data.total_levels);
+        }, 
+        function(error) { // Error
+            console.error("Error fetching guild stats:", error);
+            showError(memberCountEl);
+            showError(activeUsersEl);
+            showError(totalXpEl);
+            showError(totalLevelsEl);
+        }
+    );
     
-    // Fetch server stats
-    fetch(`/api/guilds/{{ guild.guild_id }}/stats`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('member-count').textContent = formatNumber(data.data.member_count);
-                document.getElementById('active-users').textContent = formatNumber(data.data.active_users);
-                document.getElementById('total-xp').textContent = formatNumber(data.data.total_xp);
-                document.getElementById('total-levels').textContent = formatNumber(data.data.total_levels);
-            } else {
-                throw new Error(data.message);
-            }
-        })
-        .catch(error => {
-            handleApiError(document.getElementById('member-count'), error);
-            handleApiError(document.getElementById('active-users'), error);
-            handleApiError(document.getElementById('total-xp'), error);
-            handleApiError(document.getElementById('total-levels'), error);
-        });
+    // 2. Fetch Guild Info
+    API.get(`/api/guilds/${guildId}/info`, 
+        function(data) { // Success
+            if(serverOwnerEl) serverOwnerEl.textContent = data.owner || 'Unknown';
+            if(serverCreatedEl) serverCreatedEl.textContent = formatDate(data.created_at);
+            if(serverRegionEl) serverRegionEl.textContent = data.region || 'Unknown';
+            if(serverChannelsEl) serverChannelsEl.textContent = data.channels || 'N/A';
+            // We could also update member count here again if desired
+            // if(memberCountEl && data.member_count !== 'Error') memberCountEl.textContent = formatNumber(data.member_count);
+        }, 
+        function(error) { // Error
+            console.error("Error fetching guild info:", error);
+            showError(serverOwnerEl);
+            showError(serverCreatedEl);
+            showError(serverRegionEl);
+            showError(serverChannelsEl);
+        }
+    );
     
-    // Fetch server info
-    fetch(`/api/guilds/{{ guild.guild_id }}/info`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('server-owner').textContent = data.data.owner;
-                document.getElementById('server-created').textContent = data.data.created_at ? timeAgo(data.data.created_at) : 'Unknown';
-                document.getElementById('server-region').textContent = data.data.region;
-                document.getElementById('server-channels').textContent = formatNumber(data.data.channels);
-            } else {
-                throw new Error(data.message);
-            }
-        })
-        .catch(error => {
-            handleApiError(document.getElementById('server-owner'), error);
-            handleApiError(document.getElementById('server-created'), error);
-            handleApiError(document.getElementById('server-region'), error);
-            handleApiError(document.getElementById('server-channels'), error);
-        });
-    
-    // Fetch recent activity
-    fetch(`/api/guilds/{{ guild.guild_id }}/activity`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const activityList = document.getElementById('recent-activity');
-                if (data.data.length === 0) {
-                    activityList.innerHTML = `
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">No recent activity</h6>
+    // 3. Fetch Recent Activity
+    API.get(`/api/guilds/${guildId}/activity`, 
+        function(data) { // Success
+             if(recentActivityEl) {
+                if (data && data.length > 0) {
+                    let activityHtml = '';
+                    data.forEach(activity => {
+                        activityHtml += `
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">${activity.description || 'Activity'}</h6>
+                                    <small class="text-muted">${activity.time || ''}</small>
+                                </div>
+                                <p class="mb-1 text-muted">${activity.details || ''}</p>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    });
+                    recentActivityEl.innerHTML = activityHtml;
                 } else {
-                    activityList.innerHTML = data.data.map(activity => `
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">${activity.description}</h6>
-                                <small class="text-muted">${activity.time}</small>
-                            </div>
-                            ${activity.details ? `<p class="mb-1">${activity.details}</p>` : ''}
-                        </div>
-                    `).join('');
+                    recentActivityEl.innerHTML = '<div class="list-group-item text-muted">No recent activity found.</div>';
                 }
-            } else {
-                throw new Error(data.message);
+             }
+        }, 
+        function(error) { // Error
+            console.error("Error fetching recent activity:", error);
+            if(recentActivityEl) recentActivityEl.innerHTML = '<div class="list-group-item text-danger">Error loading activity.</div>';
+        }
+    );
+    
+    // 4. Fetch and Initialize Activity Chart
+    if (activityChartCtx) {
+        // Initialize with empty data
+        activityChart = new Chart(activityChartCtx, {
+            type: 'line',
+            data: { labels: [], datasets: [] }, // Start empty
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: { y: { beginAtZero: true } }
             }
-        })
-        .catch(error => {
-            const activityList = document.getElementById('recent-activity');
-            activityList.innerHTML = `
-                <div class="list-group-item">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1 text-danger">Error loading activity</h6>
-                    </div>
-                </div>
-            `;
-            console.error('API Error:', error);
         });
+        
+        // Fetch the actual data
+        API.get(`/api/guilds/${guildId}/activity-chart`, 
+            function(chartApiResponse) { // Success
+                if (activityChart && chartApiResponse && chartApiResponse.labels && chartApiResponse.datasets) {
+                    activityChart.data.labels = chartApiResponse.labels;
+                    // Map datasets to ensure required Chart.js properties
+                    activityChart.data.datasets = chartApiResponse.datasets.map(ds => ({
+                        label: ds.label || 'Data',
+                        data: ds.data || [],
+                        borderColor: ds.borderColor || '#888',
+                        backgroundColor: ds.backgroundColor || 'rgba(136, 136, 136, 0.1)',
+                        fill: ds.fill !== undefined ? ds.fill : true,
+                        tension: ds.tension !== undefined ? ds.tension : 0.4
+                    }));
+                    activityChart.update();
+                }
+            }, 
+            function(error) { // Error
+                 console.error('Error loading activity chart data:', error);
+                 // Optionally display an error on the chart canvas
+            }
+        );
+    } else {
+        console.warn("Activity chart canvas not found.");
+    }
+
 });
 </script>
 {% endblock %} 

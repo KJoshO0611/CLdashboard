@@ -77,7 +77,8 @@
             </div>
             <div class="card-body p-0">
                 <div class="list-group list-group-flush">
-                    {% for guild in current_user.guilds[:5] %}
+                    {% for item in guild_items %}
+                    {% set guild = item.guild_object %}
                     <a href="{{ url_for('dashboard.guild_overview', guild_id=guild.guild_id) }}" class="list-group-item list-group-item-action d-flex align-items-center">
                         {% if guild.icon %}
                         <img src="{{ guild.icon }}" alt="{{ guild.name }}" class="rounded-circle me-3" style="width: 48px; height: 48px;">
@@ -88,7 +89,7 @@
                         {% endif %}
                         <div>
                             <h6 class="mb-0">{{ guild.name }}</h6>
-                            <small class="text-muted">Member Count: Loading...</small>
+                            <small class="text-muted">Members: {{ item.member_count }}</small>
                         </div>
                         <i class="fas fa-chevron-right ms-auto"></i>
                     </a>
@@ -102,7 +103,7 @@
                     {% endfor %}
                 </div>
                 
-                {% if current_user.guilds|length > 5 %}
+                {% if current_user.guilds|length > guild_items|length %}
                 <div class="card-footer text-center">
                     <a href="{{ url_for('dashboard.guild_list') }}" class="btn btn-sm btn-outline-primary">View All Servers</a>
                 </div>
@@ -153,62 +154,88 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Fetch user stats
+    // --- Fetch User Stats --- 
+    const totalXpElement = document.getElementById('total-xp');
+    const achievementsCountElement = document.getElementById('achievements-count');
+    // Add elements for voice time and avg level if you want to display them
+    // const totalVoiceElement = document.getElementById('total-voice'); 
+    // const avgLevelElement = document.getElementById('avg-level');
+    
     API.get('/api/users/me/stats', function(data) {
-        document.getElementById('total-xp').textContent = data.total_xp.toLocaleString();
-        document.getElementById('achievements-count').textContent = data.achievements;
-        document.getElementById('events-count').textContent = '0'; // Placeholder
+        totalXpElement.textContent = data.total_xp.toLocaleString();
+        achievementsCountElement.textContent = data.achievements;
+        // Optionally display voice time (convert seconds to hours/minutes)
+        // if (totalVoiceElement && data.total_voice_seconds) {
+        //    const hours = Math.floor(data.total_voice_seconds / 3600);
+        //    const minutes = Math.floor((data.total_voice_seconds % 3600) / 60);
+        //    totalVoiceElement.textContent = `${hours}h ${minutes}m`;
+        // }
+        // if (avgLevelElement) avgLevelElement.textContent = data.average_level;
+        
+        // Placeholder for events count
+        document.getElementById('events-count').textContent = '0'; 
     }, function(error) {
         console.error('Error loading user stats:', error);
+        totalXpElement.textContent = 'Error';
+        achievementsCountElement.textContent = 'Error';
     });
     
-    // Activity chart (placeholder data)
+    // --- Activity Chart --- 
     const activityCtx = document.getElementById('activity-chart').getContext('2d');
-    const activityData = {
-        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+    let activityChart = null; // Keep reference to update later
+    
+    // Default/Initial chart data
+    const initialChartData = {
+        labels: ['...', '...', '...', '...', '...', '...', '...'],
         datasets: [
-            {
-                label: 'XP Gained',
-                data: [1200, 1900, 1500, 2200],
-                backgroundColor: 'rgba(255, 102, 102, 0.2)',
-                borderColor: 'rgba(255, 102, 102, 1)',
-                tension: 0.4,
-                fill: true
-            },
-            {
-                label: 'Messages Sent',
-                data: [200, 350, 250, 400],
-                backgroundColor: 'rgba(0, 204, 204, 0.2)',
-                borderColor: 'rgba(0, 204, 204, 1)',
-                tension: 0.4,
-                fill: true
-            }
+            { label: 'Active Users (XP Gain)', data: [], borderColor: 'rgba(255, 102, 102, 1)', backgroundColor: 'rgba(255, 102, 102, 0.2)', fill: true, tension: 0.4 },
+            { label: 'Messages Sent (Est.)', data: [], borderColor: 'rgba(0, 204, 204, 1)', backgroundColor: 'rgba(0, 204, 204, 0.2)', fill: true, tension: 0.4 }
         ]
     };
-    
-    new Chart(activityCtx, {
+
+    activityChart = new Chart(activityCtx, {
         type: 'line',
-        data: activityData,
+        data: initialChartData,
         options: {
             responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+            plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } },
+            scales: { y: { beginAtZero: true } }
         }
     });
+
+    // Fetch chart data (using the first guild from the guild_items list)
+    const firstGuildItem = document.querySelector('.list-group-flush a.list-group-item'); // Get first server link
+    if (firstGuildItem) {
+        const firstGuildUrl = firstGuildItem.href;
+        const urlParts = firstGuildUrl.split('/');
+        const firstGuildId = urlParts[urlParts.length - 1]; // Extract guild ID from URL
+
+        if (firstGuildId) {
+            API.get(`/api/guilds/${firstGuildId}/activity-chart`, function(chartApiResponse) {
+                if (activityChart && chartApiResponse && chartApiResponse.labels && chartApiResponse.datasets) {
+                    activityChart.data.labels = chartApiResponse.labels;
+                    activityChart.data.datasets = chartApiResponse.datasets.map(ds => ({
+                        ...ds, // Spread existing properties like label, colors
+                        // Ensure Chart.js structure is maintained
+                        borderColor: ds.borderColor || '#ccc', 
+                        backgroundColor: ds.backgroundColor || 'rgba(200,200,200,0.1)',
+                        fill: ds.fill !== undefined ? ds.fill : true, 
+                        tension: ds.tension !== undefined ? ds.tension : 0.4 
+                    }));
+                    activityChart.update();
+                }
+            }, function(error) {
+                console.error('Error loading activity chart data:', error);
+            });
+        } else {
+             console.log("Could not determine guild ID for activity chart.");
+        }
+    } else {
+        console.log("No servers found to load activity chart.");
+        // Optionally hide or show a message on the chart canvas
+    }
     
-    // Mock recent achievements (placeholder)
+    // --- Mock recent achievements (placeholder - Keep as is for now) --- 
     setTimeout(function() {
         const achievementsHtml = `
             <a href="#" class="list-group-item list-group-item-action">

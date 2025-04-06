@@ -17,7 +17,10 @@ CREATE TABLE IF NOT EXISTS guilds (
     guild_id TEXT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     icon VARCHAR(255),
-    owner_id TEXT
+    owner_id TEXT,
+    created_at TIMESTAMP WITH TIME ZONE,
+    channel_count INTEGER,
+    preferred_locale VARCHAR(10)
 );
 
 -- Create association table for dashboard access
@@ -45,12 +48,18 @@ VALUES
 ON CONFLICT (discord_id) DO NOTHING;
 
 -- Sample guilds
-INSERT INTO guilds (guild_id, name, icon, owner_id)
+INSERT INTO guilds (guild_id, name, icon, owner_id, created_at, channel_count, preferred_locale)
 VALUES 
-    ('111111111111111111', 'Test Server 1', 'https://cdn.discordapp.com/icons/111111111111111111/server1.png', '234567890123456789'),
-    ('222222222222222222', 'Test Server 2', 'https://cdn.discordapp.com/icons/222222222222222222/server2.png', '234567890123456789'),
-    ('333333333333333333', 'Development Server', 'https://cdn.discordapp.com/icons/333333333333333333/server3.png', '123456789012345678')
-ON CONFLICT (guild_id) DO NOTHING;
+    ('111111111111111111', 'Test Server 1', 'https://cdn.discordapp.com/icons/111111111111111111/server1.png', '234567890123456789', NOW() - interval '10 day', 25, 'en-US'),
+    ('222222222222222222', 'Test Server 2', 'https://cdn.discordapp.com/icons/222222222222222222/server2.png', '234567890123456789', NOW() - interval '5 day', 15, 'en-US'),
+    ('333333333333333333', 'Development Server', 'https://cdn.discordapp.com/icons/333333333333333333/server3.png', '123456789012345678', NOW(), 50, 'en-GB')
+ON CONFLICT (guild_id) DO UPDATE SET 
+    name = EXCLUDED.name, 
+    icon = EXCLUDED.icon, 
+    owner_id = EXCLUDED.owner_id,
+    created_at = EXCLUDED.created_at,
+    channel_count = EXCLUDED.channel_count,
+    preferred_locale = EXCLUDED.preferred_locale;
 
 -- Give dashboard access to the dev user for all servers
 INSERT INTO user_guild (user_id, guild_id)

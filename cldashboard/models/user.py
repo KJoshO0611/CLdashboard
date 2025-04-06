@@ -114,7 +114,10 @@ class Guild(db.Model):
     name = Column(String(255), nullable=False)
     icon = Column(String(255))
     owner_id = Column(String) # Nullable if owner info isn't always present
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True))
+    # Add channel_count and preferred_locale columns
+    channel_count = Column(Integer)
+    preferred_locale = Column(String(10))
     
     # Relationships - No cast needed as both sides are now String
     settings = relationship('ServerConfig', backref='guild', uselist=False, 

@@ -4,6 +4,7 @@ from cldashboard import db
 from cldashboard.models.user import Guild
 from cldashboard.middleware.auth import guild_view_required
 import requests
+from sqlalchemy import text # Import text for raw SQL
 
 dashboard = Blueprint('dashboard', __name__)
 
@@ -11,13 +12,75 @@ dashboard = Blueprint('dashboard', __name__)
 @login_required
 def index():
     """User dashboard home"""
-    return render_template('dashboard/index.html', title='Dashboard')
+    
+    # --- Fetch Guilds with Member Counts for the main dashboard page --- 
+    guilds_with_counts = []
+    user_guilds = current_user.guilds
+    
+    if user_guilds:
+        try:
+            # Fetch limited number of guilds for display on main dashboard (e.g., 3 or 5)
+            guilds_to_display = sorted(user_guilds, key=lambda g: g.name)[:3] # Limit to 3 for example
+            
+            for guild in guilds_to_display:
+                member_count_result = db.session.execute(
+                    text("SELECT COUNT(DISTINCT user_id) FROM levels WHERE guild_id = :guild_id"),
+                    {'guild_id': guild.guild_id}
+                ).scalar() or 0
+                
+                guilds_with_counts.append({
+                    'guild_object': guild,
+                    'member_count': member_count_result
+                })
+            # No need to sort again if already sliced and sorted
+            
+        except Exception as e:
+            # Don't flash error on main dashboard, just log and maybe show N/A
+            print(f"Error in dashboard index fetching counts: {e}")
+            # Fallback: Render list without counts if query fails
+            guilds_with_counts = [{'guild_object': g, 'member_count': 'N/A'} for g in sorted(user_guilds, key=lambda x: x.name)[:3]]
+    # --- End Fetch Guilds --- 
+
+    return render_template('dashboard/index.html', 
+                           title='Dashboard', 
+                           guild_items=guilds_with_counts # Pass the enhanced list
+                           )
 
 @dashboard.route('/dashboard/guilds')
 @login_required
 def guild_list():
-    """List of user's Discord guilds"""
-    return render_template('dashboard/guild_list.html', title='My Servers')
+    """List of user's Discord guilds with member counts"""
+    
+    guilds_with_counts = []
+    # current_user.guilds provides the list of Guild objects associated via user_guild table
+    user_guilds = current_user.guilds
+    
+    if user_guilds:
+        try:
+            for guild in user_guilds:
+                # Query the 'levels' table to count members the bot knows about
+                member_count_result = db.session.execute(
+                    text("SELECT COUNT(DISTINCT user_id) FROM levels WHERE guild_id = :guild_id"),
+                    {'guild_id': guild.guild_id} # guild_id is already String
+                ).scalar() or 0
+                
+                guilds_with_counts.append({
+                    'guild_object': guild,
+                    'member_count': member_count_result
+                })
+            # Sort guilds alphabetically by name (optional)
+            guilds_with_counts.sort(key=lambda x: x['guild_object'].name)
+            
+        except Exception as e:
+            flash("Error fetching member counts for servers.", "danger")
+            print(f"Error in guild_list fetching counts: {e}")
+            # Fallback: Render list without counts if query fails
+            guilds_with_counts = [{'guild_object': g, 'member_count': 'N/A'} for g in sorted(user_guilds, key=lambda x: x.name)]
+
+    return render_template('dashboard/guild_list.html', 
+                           title='My Servers', 
+                           guild_items=guilds_with_counts # Pass the enhanced list
+                           )
 
 @dashboard.route('/dashboard/guilds/<guild_id>')
 @login_required
