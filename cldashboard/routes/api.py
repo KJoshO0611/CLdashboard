@@ -1,13 +1,16 @@
 from flask import Blueprint, jsonify, request, abort
 from flask_login import login_required, current_user
-from cldashboard import db
-from cldashboard.models.user import Guild, ServerConfig, ServerXpSettings, GuildMember, User
-from cldashboard.middleware.auth import owner_required, admin_required, guild_admin_required
-from cldashboard.utils.xp_utils import calculate_cumulative_xp, total_xp_for_level
+from .. import db
+from ..models.user import Guild, ServerConfig, ServerXpSettings, GuildMember, User, RoleReward, Event, GuildEventSettings, EventAttendance
+from ..middleware.auth import owner_required, admin_required, guild_admin_required
+from ..utils.xp_utils import calculate_cumulative_xp, total_xp_for_level
 from datetime import datetime, timedelta
 import json
 import uuid
 from sqlalchemy import text
+from flask import current_app
+import os
+from werkzeug.utils import secure_filename
 
 api = Blueprint('api', __name__)
 
@@ -24,6 +27,12 @@ def api_error(message="Error", code=400):
         "success": False,
         "message": message
     }), code
+
+# Allowed extensions check remains the same
+def allowed_file(filename):
+    allowed_extensions = current_app.config.get('ALLOWED_EXTENSIONS', {'png', 'jpg', 'jpeg', 'gif', 'webp'})
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
 # Guild Stats API
 @api.route('/api/guilds/<string:guild_id>/stats')
@@ -282,20 +291,31 @@ def update_guild_settings(guild_id):
         xp_settings = ServerXpSettings(guild_id=guild.guild_id)
         db.session.add(xp_settings)
     
+    updated = False
     if 'min_xp' in data:
         xp_settings.min_xp = int(data['min_xp'])
+        updated = True
     if 'max_xp' in data:
         xp_settings.max_xp = int(data['max_xp'])
+        updated = True
     if 'xp_cooldown' in data:
         xp_settings.cooldown = int(data['xp_cooldown'])
-    if 'level_up_channel_id' in data:
-        settings.level_up_channel = data['level_up_channel_id']
-    if 'event_announcement_channel_id' in data:
-        settings.event_channel = data['event_announcement_channel_id']
-    if 'achievement_channel_id' in data:
-        settings.achievement_channel = data['achievement_channel_id']
+        updated = True
+    if 'level_up_channel' in data:
+        channel_id = data['level_up_channel']
+        settings.level_up_channel = str(channel_id) if channel_id else None
+        updated = True
+    if 'event_announcement_channel' in data:
+        channel_id = data['event_announcement_channel']
+        settings.event_channel = str(channel_id) if channel_id else None
+        updated = True
+    if 'achievement_channel' in data:
+        channel_id = data['achievement_channel']
+        settings.achievement_channel = str(channel_id) if channel_id else None
+        updated = True
     
-    db.session.commit()
+    if updated:
+        db.session.commit()
     
     return api_success(message="Settings updated successfully")
 
@@ -537,36 +557,71 @@ def get_guild_achievements(guild_id):
 @login_required
 @guild_admin_required
 def create_guild_achievement(guild_id):
-    """Create a new achievement for a guild"""
+    """Create a new achievement for a guild (handles multipart/form-data)"""
+    # --- Get config values --- 
+    upload_folder = current_app.config.get('UPLOAD_FOLDER')
+    upload_url_base = current_app.config.get('UPLOAD_URL_BASE', '/uploads/achievements/') # Default URL base
+    
+    if not upload_folder:
+        current_app.logger.error("UPLOAD_FOLDER is not configured in Flask app.")
+        return api_error("Server configuration error: Upload path not set.")
+        
     guild = Guild.query.filter_by(guild_id=guild_id).first()
     if not guild:
         return api_error("Guild not found", 404)
     
-    data = request.json
+    data = request.form 
     if not data:
-        return api_error("No data provided")
-    
+        return api_error("No form data provided")
+
     required_fields = ['name', 'description', 'requirement_type', 'requirement_value']
     for field in required_fields:
         if field not in data:
             return api_error(f"Missing required field: {field}")
-    
+
+    icon_url_path = None # Store the URL path, not filename
+    # Check if the post request has the file part
+    if 'icon_file' in request.files:
+        file = request.files['icon_file']
+        if file and file.filename != '' and allowed_file(file.filename):
+            try:
+                # Ensure upload directory exists using config path
+                if not os.path.exists(upload_folder):
+                     os.makedirs(upload_folder)
+                     current_app.logger.info(f"Created upload directory: {upload_folder}")
+
+                original_filename = secure_filename(file.filename)
+                file_ext = os.path.splitext(original_filename)[1]
+                unique_filename = f"{uuid.uuid4()}{file_ext}"
+                file_path = os.path.join(upload_folder, unique_filename) # Filesystem path for saving
+                file.save(file_path)
+                
+                # Construct the URL path for storage/frontend use
+                icon_url_path = os.path.join(upload_url_base, unique_filename).replace("\\", "/") # Use URL path separator
+                current_app.logger.info(f"Saved achievement icon: {file_path}, URL Path: {icon_url_path}")
+            except Exception as e:
+                 current_app.logger.error(f"Error saving uploaded icon: {e}")
+                 return api_error(f"Failed to save uploaded icon: {str(e)}")
+        elif file and file.filename != '' and not allowed_file(file.filename):
+             return api_error("Invalid file type for icon. Allowed: png, jpg, jpeg, gif, webp")
+
     try:
+        # Insert into database, removing color and secret
         result = db.session.execute(text('''
             INSERT INTO achievements (
                 guild_id, name, description, requirement_type, 
-                requirement_value, icon_path
+                requirement_value, icon_path 
             ) VALUES (
                 :guild_id, :name, :description, :requirement_type,
-                :requirement_value, :icon_path
+                :requirement_value, :icon_path 
             ) RETURNING id
         '''), {
             'guild_id': guild_id,
             'name': data['name'],
             'description': data['description'],
             'requirement_type': data['requirement_type'],
-            'requirement_value': data['requirement_value'],
-            'icon_path': data.get('icon_path')
+            'requirement_value': int(data['requirement_value']), 
+            'icon_path': icon_url_path # Store the URL path
         })
         
         achievement_id = result.scalar()
@@ -574,81 +629,85 @@ def create_guild_achievement(guild_id):
         
         return api_success({
             "id": achievement_id,
-            "message": "Achievement created successfully"
+            "message": "Achievement created successfully",
+            "icon_url_path": icon_url_path # Return URL path
         })
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f"Failed to create achievement in DB: {e}")
         return api_error(f"Failed to create achievement: {str(e)}")
+
+# --- Need to Update PUT endpoint similarly if editing is required ---
+@api.route('/api/guilds/<string:guild_id>/achievements/<int:achievement_id>', methods=['PUT'])
+@login_required
+@guild_admin_required
+def update_guild_achievement(guild_id, achievement_id):
+    # TODO: Update this endpoint to handle multipart/form-data like the POST endpoint
+    # Fetch existing achievement
+    # Handle potential new file upload (save file, update icon_path)
+    # Handle removal of icon? (Maybe pass a flag or check if icon_file is empty?)
+    # Update other fields from request.form
+    return api_error("Achievement update with file upload not yet implemented.")
 
 # Guild Events API
 @api.route('/api/guilds/<string:guild_id>/events', methods=['GET'])
 @login_required
 def get_guild_events(guild_id):
-    """Get events for a specific guild"""
+    """Get events for a specific guild, filtered by status."""
     if not current_user.can_view_guild(guild_id):
         return api_error("You do not have permission to view this guild", 403)
     
-    guild = Guild.query.filter_by(guild_id=guild_id).first()
-    if not guild:
-        return api_error("Guild not found", 404)
+    status_filter = request.args.get('status', 'upcoming').lower()
+    now_timestamp = datetime.utcnow().timestamp()
     
-    events = db.session.execute(text('''
-        SELECT 
-            e.event_id,
-            e.name,
-            e.description,
-            e.start_time,
-            e.end_time,
-            e.event_type,
-            e.status,
-            e.creator_id,
-            e.associated_boost_id,
-            COUNT(ea.id) as participant_count,
-            EXISTS(
-                SELECT 1 FROM event_attendance ea2 
-                WHERE ea2.event_id = e.event_id 
-                AND ea2.user_id = :user_id
-            ) as is_participant
-        FROM discord_scheduled_events e
-        LEFT JOIN event_attendance ea ON e.event_id = ea.event_id
-        WHERE e.guild_id = :guild_id
-        GROUP BY e.event_id, e.name, e.description, e.start_time, e.end_time, 
-                 e.event_type, e.status, e.creator_id, e.associated_boost_id
-        ORDER BY e.start_time DESC
-    '''), {
-        'guild_id': guild_id,
-        'user_id': current_user.discord_id
-    }).fetchall()
-    
-    formatted_events = []
-    for event in events:
-        now = datetime.now().timestamp()
-        if event.start_time > now:
-            status = "upcoming"
-            status_color = "success"
-        elif event.end_time and event.end_time < now:
-            status = "past"
-            status_color = "secondary"
-        else:
-            status = "ongoing"
-            status_color = "primary"
+    try:
+        query = Event.query.filter_by(guild_id=guild_id)
         
-        formatted_events.append({
-            "id": event.event_id,
-            "name": event.name,
-            "description": event.description,
-            "type": event.event_type,
-            "status": status,
-            "status_color": status_color,
-            "start_time": datetime.fromtimestamp(event.start_time).isoformat(),
-            "end_time": datetime.fromtimestamp(event.end_time).isoformat() if event.end_time else None,
-            "participants": event.participant_count,
-            "is_participant": event.is_participant,
-            "creator_id": event.creator_id,
-            "boost_id": event.associated_boost_id
-        })
-    
-    return api_success(formatted_events)
+        if status_filter == 'upcoming':
+            # Scheduled or Active (end time is in future or null)
+            query = query.filter(
+                Event.status.in_(['SCHEDULED', 'ACTIVE']), 
+                (Event.end_time == None) | (Event.end_time > now_timestamp) 
+            ).order_by(Event.start_time.asc())
+        elif status_filter == 'past':
+            # Completed or Cancelled or Active but end time is past
+             query = query.filter(
+                 Event.status.in_(['COMPLETED', 'CANCELLED']) | 
+                 ((Event.status == 'ACTIVE') & (Event.end_time != None) & (Event.end_time <= now_timestamp))
+             ).order_by(Event.start_time.desc())
+        else:
+            return api_error("Invalid status filter. Use 'upcoming' or 'past'.")
+            
+        events = query.limit(20).all() # Limit results for now
+        
+        # Format events for frontend
+        formatted_events = []
+        for event in events:
+             # Convert timestamps to readable strings (adjust format as needed)
+             start_dt = datetime.fromtimestamp(event.start_time)
+             end_dt = datetime.fromtimestamp(event.end_time) if event.end_time else None
+             
+             formatted_events.append({
+                 "internal_id": event.internal_id,
+                 "event_id": event.event_id,
+                 "name": event.name,
+                 "description": event.description,
+                 "start_time_iso": start_dt.isoformat(),
+                 "end_time_iso": end_dt.isoformat() if end_dt else None,
+                 "start_time_formatted": start_dt.strftime("%b %d, %Y %I:%M %p UTC"), # Example format
+                 "end_time_formatted": end_dt.strftime("%b %d, %Y %I:%M %p UTC") if end_dt else "-",
+                 "event_type": event.event_type,
+                 "status": event.status,
+                 "creator_id": event.creator_id,
+                 # Add location/URL data if needed later from your schema
+                 # Add attendee/interested count if needed later
+             })
+        
+        return api_success(formatted_events)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching guild events for {guild_id}: {e}")
+        return api_error("Failed to fetch events")
 
 @api.route('/api/guilds/<string:guild_id>/events', methods=['POST'])
 @login_required
@@ -836,4 +895,169 @@ def query_with_string_ids(query_text, params):
     """Execute SQL query with string ID parameters, ensuring proper type conversion"""
     updated_params = params.copy()
     # No longer needed as all IDs are strings
-    return db.session.execute(text(query_text), updated_params) 
+    return db.session.execute(text(query_text), updated_params)
+
+# --- New Endpoint for Event Settings ---
+@api.route('/api/guilds/<string:guild_id>/event-settings', methods=['POST'])
+@login_required
+@guild_admin_required
+def update_guild_event_settings(guild_id):
+    """Update event-specific settings for a guild"""
+    guild = Guild.query.filter_by(guild_id=guild_id).first()
+    if not guild:
+        return api_error("Guild not found", 404)
+    
+    data = request.json
+    if not data:
+        return api_error("No data provided")
+        
+    # Update general settings (event_channel)
+    settings = guild.settings
+    if not settings:
+        settings = ServerConfig(guild_id=guild.guild_id)
+        db.session.add(settings)
+        
+    # Update event-specific settings (attendance_bonus_xp)
+    event_settings = guild.event_settings
+    if not event_settings:
+        event_settings = GuildEventSettings(guild_id=guild.guild_id)
+        db.session.add(event_settings)
+
+    updated = False
+    if 'event_channel' in data:
+        channel_id = data['event_channel']
+        settings.event_channel = str(channel_id) if channel_id else None
+        updated = True
+        
+    if 'attendance_bonus_xp' in data:
+        try:
+            bonus_xp = int(data['attendance_bonus_xp'])
+            if 0 <= bonus_xp <= 10000: # Add reasonable validation
+                 event_settings.attendance_bonus_xp = bonus_xp
+                 updated = True
+            else:
+                 return api_error("Attendance Bonus XP must be between 0 and 10000")
+        except (ValueError, TypeError):
+             return api_error("Invalid value provided for Attendance Bonus XP")
+
+    if updated:
+        try:
+            db.session.commit()
+            return api_success(message="Event settings updated successfully")
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error saving event settings for {guild_id}: {e}")
+            return api_error("Failed to save event settings")
+    else:
+        return api_success(message="No changes detected") # Or return an appropriate response
+
+# --- New Endpoint for Event Attendees ---
+@api.route('/api/events/<int:internal_event_id>/attendees', methods=['GET'])
+@login_required # Add guild check if needed, based on how internal_id is used
+def get_event_attendees(internal_event_id):
+    """Get attendees for a specific event using internal ID."""
+    # Find the event first to get the Discord event_id and guild_id for context/permissions
+    event = Event.query.filter_by(internal_id=internal_event_id).first()
+    if not event:
+        return api_error("Event not found", 404)
+
+    # Check if the current user can view the guild this event belongs to
+    if not current_user.can_view_guild(event.guild_id):
+         return api_error("You do not have permission to view this event's attendees", 403)
+
+    try:
+        attendees = db.session.query(
+            EventAttendance.status,
+            EventAttendance.joined_at,
+            User.username,
+            User.avatar
+        ).join(User, EventAttendance.user_id == User.discord_id)\
+         .filter(EventAttendance.event_id == event.event_id) \
+         .filter(EventAttendance.guild_id == event.guild_id) \
+         .order_by(EventAttendance.joined_at.asc()).all()
+
+        formatted_attendees = []
+        for attendee in attendees:
+            formatted_attendees.append({
+                "username": attendee.username,
+                "avatar": attendee.avatar,
+                "status": attendee.status,
+                "joined_at": attendee.joined_at.strftime("%Y-%m-%d %H:%M:%S UTC") if attendee.joined_at else "N/A"
+            })
+            
+        return api_success({"attendees": formatted_attendees, "event_name": event.name})
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching attendees for event {internal_event_id}: {e}")
+        return api_error("Failed to fetch event attendees")
+
+# Add POST/PUT/DELETE for events later
+
+# --- Role Rewards API ---
+
+@api.route('/api/guilds/<string:guild_id>/role_rewards', methods=['POST'])
+@login_required
+@guild_admin_required
+def add_guild_role_reward(guild_id):
+    """Add a new role reward for a specific guild"""
+    guild = Guild.query.filter_by(guild_id=guild_id).first()
+    if not guild:
+        return api_error("Guild not found", 404)
+    
+    data = request.json
+    if not data:
+        return api_error("No data provided")
+    
+    level = data.get('level')
+    role_id = data.get('role_id')
+    role_name = data.get('role_name') # Get role name from frontend
+    behavior = data.get('behavior', 'add') # Default to 'add'
+
+    # Validation
+    if not level or not isinstance(level, int) or level < 1:
+        return api_error("Invalid level provided")
+    if not role_id or not isinstance(role_id, str):
+        return api_error("Invalid role ID provided")
+    if behavior not in ['add', 'remove']:
+        return api_error("Invalid behavior provided")
+        
+    # Check for duplicates (same level and role_id)
+    existing = RoleReward.query.filter_by(guild_id=guild_id, level=level, role_id=role_id).first()
+    if existing:
+        return api_error(f"A role reward for role {role_name or role_id} at level {level} already exists.")
+
+    try:
+        new_reward = RoleReward(
+            guild_id=guild_id,
+            level=level,
+            role_id=role_id,
+            role_name=role_name, 
+            behavior=behavior
+        )
+        db.session.add(new_reward)
+        db.session.commit()
+        # Return the created reward object (or just success message)
+        return api_success(message="Role reward added successfully", data={"id": new_reward.id}) 
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error adding role reward: {e}")
+        return api_error("Failed to add role reward")
+
+@api.route('/api/guilds/<string:guild_id>/role_rewards/<int:reward_id>', methods=['DELETE'])
+@login_required
+@guild_admin_required
+def delete_guild_role_reward(guild_id, reward_id):
+    """Delete a specific role reward"""
+    reward = RoleReward.query.filter_by(id=reward_id, guild_id=guild_id).first()
+    
+    if not reward:
+        return api_error("Role reward not found", 404)
+    
+    try:
+        db.session.delete(reward)
+        db.session.commit()
+        return api_success(message="Role reward deleted successfully")
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting role reward: {e}")
+        return api_error("Failed to delete role reward") 

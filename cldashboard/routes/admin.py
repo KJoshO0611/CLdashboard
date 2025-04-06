@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, flash, redirect, url_for, request, abort
 from flask_login import login_required
-from cldashboard import db
-from cldashboard.models.user import Guild, ServerConfig, ServerXpSettings
-from cldashboard.middleware.auth import owner_required, admin_required, guild_admin_required
+from .. import db
+from ..models.user import Guild, ServerConfig, ServerXpSettings, GuildEventSettings
+from ..middleware.auth import owner_required, admin_required, guild_admin_required
 
 admin = Blueprint('admin', __name__)
 
@@ -94,10 +94,25 @@ def guild_roles(guild_id):
     if not guild:
         abort(404)
     
+    # Fetch role rewards (already sorted by level due to relationship definition)
+    role_rewards = guild.role_rewards 
+    
+    # Fetch server config for stack/announce settings
+    settings = guild.settings
+    if not settings:
+        # Create settings if they don't exist (should ideally exist, but safety check)
+        settings = ServerConfig(guild_id=guild.guild_id)
+        db.session.add(settings)
+        db.session.commit()
+        # Re-fetch after commit if needed, or pass the new object
+        settings = guild.settings # Re-fetch to ensure it's attached to the session properly
+
     return render_template(
         'admin/guild_roles.html', 
         title=f'{guild.name} - Role Rewards', 
-        guild=guild
+        guild=guild,
+        role_rewards=role_rewards, # Pass the fetched role rewards
+        settings=settings # Pass the settings object
     )
 
 @admin.route('/dashboard/guilds/<guild_id>/achievements/manage')
@@ -109,11 +124,21 @@ def manage_achievements(guild_id):
     
     if not guild:
         abort(404)
+        
+    # Fetch server config for achievement settings
+    settings = guild.settings
+    if not settings:
+        # Create settings if they don't exist (should ideally exist, but safety check)
+        settings = ServerConfig(guild_id=guild.guild_id)
+        db.session.add(settings)
+        db.session.commit()
+        settings = guild.settings # Re-fetch
     
     return render_template(
         'admin/manage_achievements.html', 
         title=f'{guild.name} - Manage Achievements', 
-        guild=guild
+        guild=guild,
+        settings=settings # Pass settings object
     )
 
 @admin.route('/dashboard/guilds/<guild_id>/events/manage')
@@ -125,9 +150,27 @@ def manage_events(guild_id):
     
     if not guild:
         abort(404)
+        
+    # Fetch server config for event channel settings
+    settings = guild.settings # General settings (like event_channel)
+    if not settings:
+        settings = ServerConfig(guild_id=guild.guild_id)
+        db.session.add(settings)
+        db.session.commit()
+        settings = guild.settings # Re-fetch
+        
+    # Fetch specific event settings (like bonus XP)
+    event_settings = guild.event_settings
+    if not event_settings:
+        event_settings = GuildEventSettings(guild_id=guild.guild_id)
+        db.session.add(event_settings)
+        db.session.commit()
+        event_settings = guild.event_settings # Re-fetch
     
     return render_template(
         'admin/manage_events.html', 
         title=f'{guild.name} - Manage Events', 
-        guild=guild
+        guild=guild,
+        settings=settings, # Pass general settings
+        event_settings=event_settings # Pass event-specific settings
     ) 

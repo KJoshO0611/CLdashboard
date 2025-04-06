@@ -13,6 +13,7 @@ from logging.handlers import RotatingFileHandler
 from sqlalchemy import text
 from pathlib import Path
 import subprocess
+from flask_migrate import Migrate
 
 # Load environment variables
 load_dotenv()
@@ -31,6 +32,9 @@ discord = DiscordOAuth2Session()
 # Initialize CSRF protection
 csrf = CSRFProtect()
 
+# Initialize Flask-Migrate
+migrate = Migrate()
+
 def fix_database_url(url):
     """Fix database URL format issues"""
     if not url:
@@ -45,7 +49,7 @@ def fix_database_url(url):
 
 def create_app(config_class=Config):
     """Create and configure the Flask application"""
-    app = Flask(__name__)
+    app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_class)
     
     # Flask configuration
@@ -76,12 +80,31 @@ def create_app(config_class=Config):
     app.config["DISCORD_REDIRECT_URI"] = os.getenv("DISCORD_REDIRECT_URI")
     app.config["DISCORD_BOT_TOKEN"] = os.getenv("DISCORD_BOT_TOKEN")
     
+    # --- Default Upload Configuration (for local development) --- 
+    # Adjust these paths as needed for your local setup
+    # Use commas, os.path.join handles separators
+    default_upload_folder = os.path.join(app.root_path, '..', 'uploads', 'achievements') 
+    app.config.setdefault('UPLOAD_FOLDER', default_upload_folder)
+    app.config.setdefault('UPLOAD_URL_BASE', '/uploads/achievements/')
+    app.config.setdefault('ALLOWED_EXTENSIONS', {'png', 'jpg', 'jpeg', 'gif', 'webp'})
+    # Ensure the default local upload folder exists
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        try:
+            os.makedirs(app.config['UPLOAD_FOLDER'])
+            app.logger.info(f"Created default local upload directory: {app.config['UPLOAD_FOLDER']}")
+        except OSError as e:
+            app.logger.error(f"Error creating default local upload directory {app.config['UPLOAD_FOLDER']}: {e}")
+
+    # Override with instance config if it exists
+    app.config.from_pyfile('config.py', silent=True)
+    
     # Initialize extensions with app
     db.init_app(app)
     login_manager.init_app(app)
     Session(app)
     csrf.init_app(app)
     discord.init_app(app)
+    migrate.init_app(app, db)
     
     # Create flask_session directory if it doesn't exist
     os.makedirs(app.config["SESSION_FILE_DIR"], exist_ok=True)
@@ -121,11 +144,11 @@ def create_app(config_class=Config):
         app.logger.info('CLDashboard startup')
     
     # Register blueprints
-    from cldashboard.routes.main import main
-    from cldashboard.routes.auth import auth
-    from cldashboard.routes.dashboard import dashboard
-    from cldashboard.routes.admin import admin
-    from cldashboard.routes.api import api
+    from .routes.main import main
+    from .routes.auth import auth
+    from .routes.dashboard import dashboard
+    from .routes.admin import admin
+    from .routes.api import api
     
     app.register_blueprint(main)
     app.register_blueprint(auth, url_prefix='/auth')
@@ -137,10 +160,11 @@ def create_app(config_class=Config):
     with app.app_context():
         try:
             # Create tables that SQLAlchemy knows about (for new installations)
-            db.create_all()
+            # db.create_all() # Comment this out or remove, let migrations handle it
             
             # Let the app know migrations are disabled
-            app.logger.info('Database migrations disabled')
+            # app.logger.info('Database migrations disabled')
+            app.logger.info('Database migrations enabled via Flask-Migrate')
                 
         except Exception as e:
             app.logger.error(f'Database initialization error: {str(e)}')

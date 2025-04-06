@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, abort, flash, redirect, url_for, request
 from flask_login import login_required, current_user
-from cldashboard import db
-from cldashboard.models.user import Guild
-from cldashboard.middleware.auth import guild_view_required
+from .. import db
+from ..models.user import Guild, GuildMember
+from ..middleware.auth import guild_view_required
 import requests
 from sqlalchemy import text # Import text for raw SQL
 

@@ -176,68 +176,96 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
-$(document).ready(function() {
-    // Handle XP Settings form submission
-    $('#xp-settings-form').submit(function(e) {
-        e.preventDefault();
-        
-        // Get form data
-        const formData = {
-            min_xp: parseInt($('#min-xp').val()),
-            max_xp: parseInt($('#max-xp').val()),
-            xp_cooldown: parseInt($('#cooldown').val())
-        };
-        
-        // Validation
-        if (formData.min_xp > formData.max_xp) {
-            showToast('error', 'Minimum XP cannot be greater than Maximum XP');
-            return;
-        }
-        
-        // Send API request
-        $.ajax({
-            url: `/api/guilds/{{ guild.guild_id }}/settings`,
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(formData),
-            success: function(response) {
-                showToast('success', 'XP settings updated successfully');
-            },
-            error: function(xhr) {
-                const response = xhr.responseJSON || { error: 'An unknown error occurred' };
-                showToast('error', response.error);
-            }
-        });
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    const xpSettingsForm = document.getElementById('xp-settings-form');
     
-    // Function to show toasts
-    function showToast(type, message) {
-        const toastClass = type === 'success' ? 'bg-success' : 'bg-danger';
-        const toast = `
-            <div class="toast align-items-center ${toastClass} text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        `;
-        
-        const toastContainer = $('#toast-container');
-        toastContainer.append(toast);
-        
-        const toastElement = toastContainer.find('.toast').last();
-        const bsToast = new bootstrap.Toast(toastElement, { delay: 5000 });
-        bsToast.show();
-        
-        // Remove toast after it's hidden
-        toastElement.on('hidden.bs.toast', function() {
-            $(this).remove();
+    if (xpSettingsForm) {
+        xpSettingsForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission
+            
+            const guildId = "{{ guild.guild_id }}";
+            const minXpInput = document.getElementById('min-xp');
+            const maxXpInput = document.getElementById('max-xp');
+            const cooldownInput = document.getElementById('cooldown');
+
+            const minXp = parseInt(minXpInput.value);
+            const maxXp = parseInt(maxXpInput.value);
+            const cooldown = parseInt(cooldownInput.value);
+
+            // Validation
+            if (isNaN(minXp) || minXp < 1 || minXp > 100) {
+                 showNotification('Minimum XP must be between 1 and 100.', 'danger');
+                 return;
+            }
+             if (isNaN(maxXp) || maxXp < 1 || maxXp > 100) {
+                 showNotification('Maximum XP must be between 1 and 100.', 'danger');
+                 return;
+            }
+            if (minXp > maxXp) {
+                showNotification('Minimum XP cannot be greater than Maximum XP.', 'danger');
+                return;
+            }
+            if (isNaN(cooldown) || cooldown < 0 || cooldown > 3600) {
+                showNotification('XP Cooldown must be between 0 and 3600 seconds.', 'danger');
+                return;
+            }
+
+            const dataToSave = {
+                min_xp: minXp,
+                max_xp: maxXp,
+                xp_cooldown: cooldown 
+            };
+            
+            // Use API helper (ensure API and showNotification are globally available)
+            API.post(`/api/guilds/${guildId}/settings`, dataToSave, 
+                function(data, message) { // Success
+                    showNotification(message || 'XP settings saved successfully!', 'success');
+                }, 
+                function(error) { // Error
+                    showNotification(error || 'Failed to save XP settings.', 'danger');
+                    console.error("Error saving XP settings:", error);
+                }
+            );
         });
     }
+
+    // Re-use the showNotification function (ensure it's defined globally or in layout.html)
+    function showNotification(message, type = 'success') {
+        // Assuming showNotification is defined globally as in admin/guild_settings.html
+        // If not, you might need to copy the function definition here or ensure it's loaded
+        const alertContainer = document.querySelector('.flash-container') || document.body; 
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show m-3 position-fixed top-0 end-0" role="alert" style="z-index: 1050;">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = alertHtml;
+        const alertElement = tempDiv.firstChild;
+        if (alertContainer) { // Check if container exists
+             alertContainer.appendChild(alertElement);
+        } else {
+            console.warn("Notification container not found, appending to body.");
+            document.body.appendChild(alertElement);
+        }
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            // Check if bootstrap is loaded and Alert component exists
+             if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alertElement);
+                if (bsAlert) {
+                    bsAlert.close();
+                }
+             } else {
+                 // Fallback removal if Bootstrap JS isn't loaded or fails
+                 alertElement.remove();
+             }
+        }, 5000);
+    } 
 });
 </script>
 {% endblock %} 

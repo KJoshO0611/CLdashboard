@@ -93,117 +93,18 @@
                 </div>
                 
                 <div id="achievements-container">
-                    <div class="row row-cols-1 row-cols-md-2 g-4">
-                        <!-- Sample achievements; replace with dynamic data when available -->
-                        <div class="col">
-                            <div class="card h-100 achievement-card">
-                                <div class="card-header bg-purple text-white d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0"><i class="fas fa-comments"></i> Chatterbox</h6>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm text-white" type="button" data-bs-toggle="dropdown">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-edit"></i> Edit</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash"></i> Delete</a></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <p class="card-text">Send 1,000 messages in the server.</p>
-                                    <div class="d-flex justify-content-between text-muted small">
-                                        <span>Type: <strong>Message Count</strong></span>
-                                        <span>Requirement: <strong>1,000</strong></span>
-                                    </div>
-                                </div>
-                                <div class="card-footer bg-light">
-                                    <small class="text-muted">10 users completed (5.2%)</small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col">
-                            <div class="card h-100 achievement-card">
-                                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0"><i class="fas fa-user-friends"></i> Social Butterfly</h6>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm text-white" type="button" data-bs-toggle="dropdown">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-edit"></i> Edit</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash"></i> Delete</a></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <p class="card-text">React to 100 different messages.</p>
-                                    <div class="d-flex justify-content-between text-muted small">
-                                        <span>Type: <strong>Reaction Count</strong></span>
-                                        <span>Requirement: <strong>100</strong></span>
-                                    </div>
-                                </div>
-                                <div class="card-footer bg-light">
-                                    <small class="text-muted">25 users completed (13.1%)</small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col">
-                            <div class="card h-100 achievement-card">
-                                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0"><i class="fas fa-star"></i> Rising Star</h6>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm text-white" type="button" data-bs-toggle="dropdown">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-edit"></i> Edit</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash"></i> Delete</a></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <p class="card-text">Reach level 10 in the server.</p>
-                                    <div class="d-flex justify-content-between text-muted small">
-                                        <span>Type: <strong>Level</strong></span>
-                                        <span>Requirement: <strong>10</strong></span>
-                                    </div>
-                                </div>
-                                <div class="card-footer bg-light">
-                                    <small class="text-muted">42 users completed (22.0%)</small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col">
-                            <div class="card h-100 achievement-card">
-                                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0"><i class="fas fa-calendar-check"></i> Event Enthusiast</h6>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm text-dark" type="button" data-bs-toggle="dropdown">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-edit"></i> Edit</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash"></i> Delete</a></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <p class="card-text">Attend 5 server events.</p>
-                                    <div class="d-flex justify-content-between text-muted small">
-                                        <span>Type: <strong>Event Attendance</strong></span>
-                                        <span>Requirement: <strong>5</strong></span>
-                                    </div>
-                                </div>
-                                <div class="card-footer bg-light">
-                                    <small class="text-muted">15 users completed (7.9%)</small>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="row row-cols-1 row-cols-md-2 g-4" id="achievements-row">
+                        <!-- Achievements will be loaded here by JavaScript -->
                     </div>
                     
+                    <!-- Loading state -->
+                    <div id="loading-achievements" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading achievements...</p>
+                    </div>
+
                     <!-- Empty state for when no achievements exist -->
                     <div id="no-achievements" class="text-center py-5 d-none">
                         <i class="fas fa-trophy fa-4x text-muted mb-3"></i>
@@ -224,20 +125,17 @@
             <div class="card-body">
                 <form id="achievement-settings-form">
                     <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="announce-achievements" checked>
+                        <input type="checkbox" class="form-check-input" id="announce-achievements" name="announce_achievements" {% if settings.announce_achievements %}checked{% endif %}>
                         <label class="form-check-label" for="announce-achievements">Announce Achievements</label>
                         <div class="form-text">If enabled, the bot will announce when a user earns an achievement.</div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="achievement-channel" class="form-label">Achievement Announcement Channel</label>
-                        <select class="form-select" id="achievement-channel">
-                            <option value="" selected>Same as level-up channel</option>
-                            <option value="123456789012345678">general</option>
-                            <option value="123456789012345679">announcements</option>
-                            <option value="123456789012345680">achievements</option>
-                        </select>
-                        <div class="form-text">Select where achievement announcements should be sent.</div>
+                        <label for="achievement-channel" class="form-label">Achievement Announcement Channel ID</label>
+                        <input type="text" class="form-control" id="achievement-channel" name="achievement_channel" 
+                               placeholder="Leave blank to use Level Up channel" 
+                               value="{{ settings.achievement_channel if settings.achievement_channel else '' }}">
+                        <div class="form-text">Enter the exact Channel ID. Leave blank to disable or use the Level Up channel (if configured).</div>
                     </div>
                     
                     <button type="submit" class="btn btn-primary">Save Settings</button>
@@ -257,55 +155,53 @@
             </div>
             <div class="modal-body">
                 <form id="add-achievement-form">
+                    <input type="hidden" id="edit-achievement-id" name="id" value="">
                     <div class="row mb-3">
                         <div class="col-md-8">
                             <label for="achievement-name" class="form-label">Achievement Name</label>
-                            <input type="text" class="form-control" id="achievement-name" maxlength="50" required>
+                            <input type="text" class="form-control" id="achievement-name" name="name" maxlength="50" required>
                         </div>
                         <div class="col-md-4">
-                            <label for="achievement-icon" class="form-label">Icon</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i id="selected-icon" class="fas fa-trophy"></i></span>
-                                <button class="btn btn-outline-secondary" type="button" id="icon-selector-btn">Select Icon</button>
-                            </div>
+                            <label for="achievement-icon-file" class="form-label">Icon Image (Optional)</label>
+                            <input class="form-control" type="file" id="achievement-icon-file" name="icon_file" accept="image/png, image/jpeg, image/gif, image/webp">
+                            <img id="icon-preview" src="#" alt="Icon Preview" class="img-thumbnail mt-2 d-none" style="max-width: 64px; max-height: 64px;"/>
                         </div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="achievement-description" class="form-label">Description</label>
-                        <textarea class="form-control" id="achievement-description" rows="2" maxlength="200" required></textarea>
+                        <textarea class="form-control" id="achievement-description" name="description" rows="2" maxlength="200" required></textarea>
                         <div class="form-text">Explain how users can earn this achievement.</div>
                     </div>
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="achievement-type" class="form-label">Achievement Type</label>
-                            <select class="form-select" id="achievement-type" required>
+                            <select class="form-select" id="achievement-type" name="requirement_type" required>
                                 <option value="" selected disabled>Select type</option>
-                                <option value="message_count">Message Count</option>
+                                <option value="total_messages">Message Count</option>
                                 <option value="reaction_count">Reaction Count</option>
                                 <option value="level">Level</option>
-                                <option value="voice_time">Voice Time</option>
-                                <option value="event_attendance">Event Attendance</option>
-                                <option value="invite_count">Invite Count</option>
+                                <option value="voice_time_seconds">Voice Time (Seconds)</option>
+                                <option value="event_attendance_count">Event Attendance</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label for="achievement-requirement" class="form-label">Requirement Value</label>
-                            <input type="number" class="form-control" id="achievement-requirement" min="1" required>
-                            <div class="form-text">The amount needed to earn this achievement.</div>
+                            <input type="number" class="form-control" id="achievement-requirement" name="requirement_value" min="1" required>
+                            <div class="form-text">The amount needed (e.g., 100 messages, Level 10).</div>
                         </div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="achievement-color" class="form-label">Color</label>
                         <div>
-                            <input type="color" class="form-control form-control-color" id="achievement-color" value="#8A2BE2" title="Choose a color for the achievement">
+                            <input type="color" class="form-control form-control-color" id="achievement-color" name="color" value="#6a1b9a" title="Choose a color for the achievement header">
                         </div>
                     </div>
                     
                     <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="achievement-secret">
+                        <input type="checkbox" class="form-check-input" id="achievement-secret" name="secret">
                         <label class="form-check-label" for="achievement-secret">Secret Achievement</label>
                         <div class="form-text">If enabled, users won't see this achievement until they earn it.</div>
                     </div>
@@ -313,101 +209,362 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="save-achievement-btn">Create Achievement</button>
+                <button type="button" class="btn btn-primary" id="save-achievement-btn">Save Achievement</button>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
-$(document).ready(function() {
-    // Handle form submissions
-    $('#achievement-settings-form').submit(function(e) {
-        e.preventDefault();
-        
-        const formData = {
-            announce_achievements: $('#announce-achievements').is(':checked'),
-            achievement_channel: $('#achievement-channel').val()
-        };
-        
-        // API call would go here
-        console.log('Saving achievement settings:', formData);
-        showToast('success', 'Achievement settings saved successfully');
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    const guildId = "{{ guild.guild_id }}";
+    const achievementSettingsForm = document.getElementById('achievement-settings-form');
+    const achievementsRow = document.getElementById('achievements-row');
+    const loadingIndicator = document.getElementById('loading-achievements');
+    const noAchievementsIndicator = document.getElementById('no-achievements');
     
-    // Create achievement
-    $('#save-achievement-btn').click(function() {
-        const name = $('#achievement-name').val();
-        const description = $('#achievement-description').val();
-        const type = $('#achievement-type').val();
-        const requirement = $('#achievement-requirement').val();
+    // Add Achievement Modal Elements
+    const addAchievementModalElement = document.getElementById('addAchievementModal');
+    const addAchievementModal = bootstrap.Modal.getOrCreateInstance(addAchievementModalElement);
+    const addAchievementForm = document.getElementById('add-achievement-form');
+    const saveAchievementBtn = document.getElementById('save-achievement-btn');
+    const modalTitle = document.getElementById('addAchievementModalLabel');
+    const editAchievementIdInput = document.getElementById('edit-achievement-id');
+    const nameInput = document.getElementById('achievement-name');
+    const descriptionInput = document.getElementById('achievement-description');
+    const typeInput = document.getElementById('achievement-type');
+    const requirementInput = document.getElementById('achievement-requirement');
+    const colorInput = document.getElementById('achievement-color');
+    const iconValueInput = document.getElementById('achievement-icon-value');
+    const selectedIconDisplay = document.getElementById('selected-icon');
+    const secretInput = document.getElementById('achievement-secret');
+    const iconFileInput = document.getElementById('achievement-icon-file');
+    const iconPreview = document.getElementById('icon-preview');
+
+    // --- Load Achievements --- 
+    function loadAchievements() {
+        console.log("loadAchievements called"); // Log: Function start
+        loadingIndicator.classList.remove('d-none');
+        achievementsRow.innerHTML = ''; // Clear previous cards from the row
+        noAchievementsIndicator.classList.add('d-none');
+
+        API.get(`/api/guilds/${guildId}/achievements`,
+            (data) => {
+                console.log("API.get success. Received data:", data); // Log: API success + data
+                loadingIndicator.classList.add('d-none');
+                if (data && data.length > 0) {
+                    console.log(`Processing ${data.length} achievements.`); // Log: Starting loop
+                    data.forEach((ach, index) => {
+                        console.log(`Processing achievement ${index}:`, ach); // Log: Each achievement object
+                        try {
+                            const card = createAchievementCard(ach);
+                            console.log(`Created card for achievement ${index}:`, card); // Log: Card element created
+                            achievementsRow.appendChild(card); // Append to the row element
+                        } catch (e) {
+                             console.error(`Error creating card for achievement ${index}:`, e, ach); // Log: Error during card creation
+                        }
+                    });
+                } else {
+                    console.log("No achievements data received or data array is empty."); // Log: Empty data
+                    noAchievementsIndicator.classList.remove('d-none');
+                }
+            },
+            (error) => {
+                console.error("API.get error:", error); // Log: API error
+                loadingIndicator.classList.add('d-none');
+                noAchievementsIndicator.classList.remove('d-none'); // Show empty state on error too
+                showNotification('Failed to load achievements: ' + error, 'danger');
+                console.error("Error loading achievements:", error);
+            }
+        );
+    }
+
+    function createAchievementCard(achievement) {
+        console.log("createAchievementCard called with:", achievement); // Log: Function input
+        const col = document.createElement('div');
+        col.className = 'col';
+
+        // Calculate completion percentage using correct keys from API
+        const totalMembers = achievement.member_count > 0 ? achievement.member_count : 1; // Use member_count
+        const completedCount = achievement.members_completed || 0; // Use members_completed
+        const completionPercentage = ((completedCount / totalMembers) * 100).toFixed(1);
+        console.log("Calculated completion:", completionPercentage); // Log: After calculation
         
-        if (!name || !description || !type || !requirement) {
-            showToast('error', 'Please fill in all required fields');
-            return;
+        // Format type string (handle potential nulls) using 'category' key
+        const typeStr = achievement.category || 'unknown'; // Use category
+        const formattedType = typeStr.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        console.log("Formatted type:", formattedType); // Log: After type formatting
+
+        // Determine icon display: Use icon_path if present, otherwise default FontAwesome
+        let iconHtml;
+        if (achievement.icon_path) {
+            // Assuming icon_path is a URL/relative path like /uploads/achievements/xyz.png
+            iconHtml = `<img src="${achievement.icon_path}" alt="Icon" class="me-2" style="width: 20px; height: 20px; vertical-align: middle;">`;
+        } else {
+            // Fallback to FontAwesome icon using achievement.icon (if that field still exists) or default
+            const faIcon = achievement.icon || 'trophy'; // Assuming achievement.icon holds the FontAwesome name
+            iconHtml = `<i class="fas fa-${faIcon} me-2"></i>`;
         }
-        
-        const achievementData = {
-            name: name,
-            description: description,
-            type: type,
-            requirement: requirement,
-            color: $('#achievement-color').val(),
-            icon: $('#selected-icon').attr('class').replace('fas fa-', ''),
-            secret: $('#achievement-secret').is(':checked')
-        };
-        
-        // API call would go here
-        console.log('Creating achievement:', achievementData);
-        
-        // Close modal
-        $('#addAchievementModal').modal('hide');
-        
-        // Show success message
-        showToast('success', 'Achievement created successfully');
-    });
-    
-    // Simple icon selector for demo
-    $('#icon-selector-btn').click(function() {
-        const icons = [
-            'trophy', 'star', 'medal', 'award', 'certificate', 
-            'crown', 'gem', 'comments', 'user-friends', 'heart',
-            'calendar-check', 'microphone', 'handshake', 'thumbs-up', 'bell'
-        ];
-        
-        // Get a random icon for demo purposes
-        const randomIcon = icons[Math.floor(Math.random() * icons.length)];
-        $('#selected-icon').attr('class', `fas fa-${randomIcon}`);
-    });
-    
-    // Function to show toasts
-    function showToast(type, message) {
-        const toastClass = type === 'success' ? 'bg-success' : 'bg-danger';
-        const toast = `
-            <div class="toast align-items-center ${toastClass} text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        ${message}
+
+        col.innerHTML = `
+            <div class="card h-100 achievement-card" data-achievement-id="${achievement.id}">
+                <div class="card-header text-white d-flex justify-content-between align-items-center" style="background-color: ${achievement.color || '#6a1b9a'};">
+                    <h6 class="mb-0">${iconHtml} ${achievement.name || 'Unnamed Achievement'}</h6> {# Use iconHtml #}
+                    <div class="dropdown">
+                        <button class="btn btn-sm text-white" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><button class="dropdown-item btn-edit-achievement" type="button"><i class="fas fa-edit"></i> Edit</button></li>
+                            <li><button class="dropdown-item text-danger btn-delete-achievement" type="button"><i class="fas fa-trash"></i> Delete</button></li>
+                        </ul>
                     </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">${achievement.description || 'No description provided.'}</p>
+                    <div class="d-flex justify-content-between text-muted small">
+                        <span>Type: <strong>${formattedType}</strong></span>
+                        <span>Requirement: <strong>${achievement.requirement || 'N/A'}</strong></span>
+                    </div>
+                     ${achievement.secret ? '<span class="badge bg-secondary mt-2">Secret</span>' : ''}
+                </div>
+                <div class="card-footer bg-light">
+                    <small class="text-muted">${completedCount} users completed (${completionPercentage}%)</small> {# Use corrected count #}
                 </div>
             </div>
         `;
-        
-        const toastContainer = $('#toast-container');
-        toastContainer.append(toast);
-        
-        const toastElement = toastContainer.find('.toast').last();
-        const bsToast = new bootstrap.Toast(toastElement, { delay: 5000 });
-        bsToast.show();
-        
-        // Remove toast after it's hidden
-        toastElement.on('hidden.bs.toast', function() {
-            $(this).remove();
+        console.log("Finished creating card HTML"); // Log: Before returning
+        return col;
+    }
+
+    // --- Save General Achievement Settings ---
+    if (achievementSettingsForm) {
+        achievementSettingsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const announce = document.getElementById('announce-achievements').checked;
+            const channelInput = document.getElementById('achievement-channel');
+            let channelId = channelInput.value.trim();
+
+            // Validation for Channel ID
+            if (channelId && !/^[0-9]+$/.test(channelId)) {
+                showNotification('Achievement Announcement Channel ID must contain only numbers or be blank.', 'danger');
+                return;
+            }
+             // Set to null if blank
+            channelId = channelId ? channelId : null; 
+
+            const dataToSave = {
+                announce_achievements: announce,
+                achievement_channel: channelId
+            };
+
+            API.post(`/api/guilds/${guildId}/settings`, dataToSave,
+                (data, message) => {
+                    showNotification(message || 'Achievement settings saved successfully!', 'success');
+                },
+                (error) => {
+                    showNotification(error || 'Failed to save achievement settings.', 'danger');
+                    console.error("Error saving achievement settings:", error);
+                }
+            );
         });
     }
+
+    // --- Icon Preview Logic ---
+    if (iconFileInput && iconPreview) {
+        iconFileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    iconPreview.src = e.target.result;
+                    iconPreview.classList.remove('d-none');
+                }
+                reader.readAsDataURL(file);
+            } else {
+                // Clear preview if no file or invalid file type
+                iconPreview.src = '#';
+                iconPreview.classList.add('d-none');
+            }
+        });
+    }
+
+    // --- Create/Edit Achievement --- 
+    if (saveAchievementBtn) {
+        saveAchievementBtn.addEventListener('click', async function() {
+            // Basic Form Validation
+            if (!addAchievementForm.checkValidity()) {
+                 showNotification('Please fill out all required achievement fields.', 'danger');
+                 addAchievementForm.reportValidity(); 
+                 return;
+            }
+
+            // Use FormData for file uploads
+            const formData = new FormData(addAchievementForm);
+            const editingId = editAchievementIdInput.value;
+            
+            // Append checkbox value manually (FormData doesn't include unchecked boxes)
+            formData.set('secret', secretInput.checked); 
+            
+            // For PUT requests (editing), some servers expect _method field or specific handling
+            // Let's stick to standard POST for simplicity, assuming backend can handle it
+            // or use POST for create and PUT for update if backend supports it differently for multipart
+            const apiUrl = editingId 
+                         ? `/api/guilds/${guildId}/achievements/${editingId}` // Adjust if your PUT needs different handling for multipart
+                         : `/api/guilds/${guildId}/achievements`;
+            const apiMethod = editingId ? 'PUT' : 'POST'; // Keep this logic, backend needs to handle PUT with multipart
+            const successMessage = editingId ? 'Achievement updated successfully!' : 'Achievement created successfully!';
+            const errorMessage = editingId ? 'Failed to update achievement.' : 'Failed to create achievement.';
+
+            console.log(`Sending ${apiMethod} request to ${apiUrl} with FormData...`); // Debugging
+
+            try {
+                // Get CSRF token from meta tag
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                const response = await fetch(apiUrl, {
+                    method: apiMethod,
+                    headers: {
+                        // Add CSRF token header
+                        'X-CSRFToken': csrfToken 
+                        // Add other Auth headers if needed
+                    },
+                    body: formData, // Send FormData directly
+                });
+
+                const result = await response.json();
+                console.log('API Response:', result); // Debugging
+
+                if (response.ok) {
+                    showNotification(result.message || successMessage, 'success');
+                    addAchievementModal.hide();
+                    loadAchievements(); // Reload the list
+                } else {
+                    showNotification(result.message || errorMessage, 'danger');
+                }
+            } catch (error) {
+                console.error(`Error ${editingId ? 'updating' : 'creating'} achievement:`, error);
+                showNotification(`An error occurred: ${error.message}`, 'danger');
+            }
+        });
+    }
+    
+    // --- Reset Modal on Open/Close ---
+    addAchievementModalElement.addEventListener('show.bs.modal', function (event) {
+        // If triggered by an edit button, populate the form
+        const button = event.relatedTarget;
+        if (button && button.classList.contains('btn-edit-achievement')) {
+             const card = button.closest('.achievement-card');
+             const achievementId = card.getAttribute('data-achievement-id');
+             // Fetch full achievement data (or use data already loaded if available)
+             // Assuming we have the full data from the initial load for simplicity here
+             const header = card.querySelector('.card-header');
+             const body = card.querySelector('.card-body');
+             const footer = card.querySelector('.card-footer'); // Might need more data later
+             
+             modalTitle.textContent = 'Edit Achievement';
+             saveAchievementBtn.textContent = 'Save Changes';
+             editAchievementIdInput.value = achievementId;
+             
+             nameInput.value = header.querySelector('h6').textContent.trim(); // Might need adjustment if icon changes
+             descriptionInput.value = body.querySelector('p').textContent.trim();
+             typeInput.value = body.querySelector('strong:nth-of-type(1)').textContent.toLowerCase().replace(/ /g, '_'); // Reconstruct type value
+             requirementInput.value = body.querySelector('strong:nth-of-type(2)').textContent;
+             colorInput.value = rgbToHex(header.style.backgroundColor); // Helper needed for this
+             const iconClass = header.querySelector('i').className;
+             const icon = iconClass.includes('fa-') ? iconClass.split('fa-')[1].split(' ')[0] : 'trophy';
+             iconValueInput.value = icon;
+             selectedIconDisplay.className = `fas fa-${icon}`;
+             secretInput.checked = body.querySelector('.badge.bg-secondary') !== null;
+
+        } else {
+            // Reset for adding new
+            modalTitle.textContent = 'Create Achievement';
+            saveAchievementBtn.textContent = 'Create Achievement';
+            addAchievementForm.reset();
+            editAchievementIdInput.value = '';
+            iconValueInput.value = 'trophy'; // Default icon
+            selectedIconDisplay.className = 'fas fa-trophy';
+            colorInput.value = '#6a1b9a'; // Default color
+        }
+    });
+
+    // --- Delete Achievement ---
+    achievementsRow.addEventListener('click', function(e) {
+        let targetButton = null;
+        if (e.target.classList.contains('btn-delete-achievement')) {
+            targetButton = e.target;
+        } else if (e.target.closest('.btn-delete-achievement')) {
+            targetButton = e.target.closest('.btn-delete-achievement');
+        }
+        
+        if (targetButton) {
+            const card = targetButton.closest('.achievement-card');
+            const achievementId = card.getAttribute('data-achievement-id');
+            const achievementName = card.querySelector('.card-header h6').textContent.trim();
+
+            if (confirm(`Are you sure you want to delete the achievement "${achievementName}"?`)) {
+                API.delete(`/api/guilds/${guildId}/achievements/${achievementId}`,
+                    (data, message) => {
+                        showNotification(message || 'Achievement deleted successfully!', 'success');
+                        loadAchievements(); // Reload achievements list
+                    },
+                    (error) => {
+                        showNotification(error || 'Failed to delete achievement.', 'danger');
+                        console.error("Error deleting achievement:", error);
+                    }
+                );
+            }
+        }
+        
+        // --- Edit Achievement (Trigger Modal) ---
+         let editButton = null;
+         if (e.target.classList.contains('btn-edit-achievement')) {
+             editButton = e.target;
+         } else if (e.target.closest('.btn-edit-achievement')) {
+             editButton = e.target.closest('.btn-edit-achievement');
+         }
+         
+         if (editButton) {
+            // Set data attributes or fetch data if needed before opening
+            addAchievementModal.show(editButton); // Pass button to modal listener
+         }
+    });
+
+    // --- Random Icon Button (Demo) ---
+    const randomIconButton = document.getElementById('icon-selector-btn-random');
+    if(randomIconButton) {
+        randomIconButton.addEventListener('click', function() {
+            const icons = ['trophy', 'star', 'medal', 'award', 'certificate', 'crown', 'gem', 'comments', 'user-friends', 'heart', 'calendar-check', 'microphone', 'handshake', 'thumbs-up', 'bell'];
+            const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+            selectedIconDisplay.className = `fas fa-${randomIcon}`;
+            iconValueInput.value = randomIcon;
+        });
+    }
+    
+     // Helper to convert rgb(a) to hex
+    function rgbToHex(rgb) {
+        if (!rgb) return '#6a1b9a'; // Default if no color
+        let sep = rgb.indexOf(",") > -1 ? "," : " ";
+        rgb = rgb.substr(4).split(")")[0].split(sep);
+
+        let r = (+rgb[0]).toString(16),
+            g = (+rgb[1]).toString(16),
+            b = (+rgb[2]).toString(16);
+
+        if (r.length == 1) r = "0" + r;
+        if (g.length == 1) g = "0" + g;
+        if (b.length == 1) b = "0" + b;
+
+        return "#" + r + g + b;
+    }
+
+    // --- Initial Load ---
+    loadAchievements();
+    // Assuming showNotification is defined globally
+
 });
 </script>
 {% endblock %} 

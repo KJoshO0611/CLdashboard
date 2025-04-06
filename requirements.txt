@@ -10,4 +10,5 @@ asyncpg==0.29.0
 SQLAlchemy==2.0.27
 psycopg2-binary==2.9.9
 gunicorn==23.0.0
-Werkzeug==3.0.6 
+Werkzeug==3.0.6
+Flask-Migrate==4.0.7 

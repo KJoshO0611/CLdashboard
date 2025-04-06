@@ -93,6 +93,7 @@
                 </div>
                 
                 <div id="role-rewards-container">
+                    {% if role_rewards %}
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
@@ -104,49 +105,26 @@
                                 </tr>
                             </thead>
                             <tbody id="role-rewards-table">
-                                <!-- Sample role rewards; replace with dynamic data when available -->
+                                {% for reward in role_rewards %}
                                 <tr>
-                                    <td>5</td>
-                                    <td><span class="badge" style="background-color: #3498db;">Active Member</span></td>
-                                    <td>Add role</td>
+                                    <td>{{ reward.level }}</td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                        {# Try to display name, fall back to ID #}
+                                        <span class="badge bg-secondary">{{ reward.role_name if reward.role_name else reward.role_id }}</span> 
+                                    </td>
+                                    <td>{{ reward.behavior.replace('_', ' ').title() }}</td> {# Format behavior nicely #}
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1 btn-edit-role" data-reward-id="{{ reward.id }}" disabled>Edit</button> {# Edit disabled for now #}
+                                        <button class="btn btn-sm btn-outline-danger btn-delete-role" data-reward-id="{{ reward.id }}">Delete</button>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td>10</td>
-                                    <td><span class="badge" style="background-color: #2ecc71;">Regular</span></td>
-                                    <td>Add role</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>25</td>
-                                    <td><span class="badge" style="background-color: #f1c40f;">Veteran</span></td>
-                                    <td>Add role</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>50</td>
-                                    <td><span class="badge" style="background-color: #e74c3c;">Elite</span></td>
-                                    <td>Add role</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                    </td>
-                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                    
+                    {% else %}
                     <!-- Empty state for when no role rewards exist -->
-                    <div id="no-roles" class="text-center py-5 d-none">
+                    <div id="no-roles" class="text-center py-5">
                         <i class="fas fa-user-tag fa-4x text-muted mb-3"></i>
                         <h4>No Role Rewards Configured</h4>
                         <p class="text-muted">Add role rewards to automatically assign roles when users reach specific levels.</p>
@@ -154,6 +132,7 @@
                             <i class="fas fa-plus"></i> Add First Role Reward
                         </button>
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -165,13 +144,13 @@
             <div class="card-body">
                 <form id="role-settings-form">
                     <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="stack-roles" checked>
+                        <input type="checkbox" class="form-check-input" id="stack-roles" name="stack_roles" {% if settings.stack_roles %}checked{% endif %}>
                         <label class="form-check-label" for="stack-roles">Stack Roles</label>
                         <div class="form-text">If enabled, users will keep their previous role rewards when earning new ones.</div>
                     </div>
                     
                     <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="announce-roles" checked>
+                        <input type="checkbox" class="form-check-input" id="announce-roles" name="announce_roles" {% if settings.announce_roles %}checked{% endif %}>
                         <label class="form-check-label" for="announce-roles">Announce Role Rewards</label>
                         <div class="form-text">If enabled, the bot will announce when a user receives a role reward.</div>
                     </div>
@@ -183,41 +162,38 @@
     </div>
 </div>
 
-<!-- Add Role Modal -->
+<!-- Add/Edit Role Modal -->
 <div class="modal fade" id="addRoleModal" tabindex="-1" aria-labelledby="addRoleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-primary-custom text-white">
-                <h5 class="modal-title" id="addRoleModalLabel">Add Role Reward</h5>
+                <h5 class="modal-title" id="addRoleModalLabel">Add Role Reward</h5> {# Title changes for edit #}
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="add-role-form">
+                    <input type="hidden" id="edit-reward-id" value=""> {# For storing ID when editing #}
                     <div class="mb-3">
                         <label for="role-level" class="form-label">Level Requirement</label>
-                        <input type="number" class="form-control" id="role-level" min="1" max="100" required>
+                        <input type="number" class="form-control" id="role-level" name="level" min="1" max="100" required>
                         <div class="form-text">The level at which this role will be awarded.</div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="role-select" class="form-label">Role</label>
-                        <select class="form-select" id="role-select" required>
-                            <option value="" selected disabled>Select a role</option>
-                            <option value="123456789012345678" data-color="#3498db">Active Member</option>
-                            <option value="123456789012345679" data-color="#2ecc71">Regular</option>
-                            <option value="123456789012345680" data-color="#f1c40f">Veteran</option>
-                            <option value="123456789012345681" data-color="#e74c3c">Elite</option>
-                        </select>
-                        <div class="form-text">Select the Discord role to award.</div>
+                        <label for="role-select" class="form-label">Role ID</label> {# Changed label #}
+                        {# Replaced select with input type=text #}
+                        <input type="text" class="form-control" id="role-select" name="role_id" placeholder="Enter Discord Role ID" required>
+                        {# Removed select and options #}
+                        <div class="form-text">Enter the exact ID of the Discord role to award.</div> {# Updated helper text #}
                     </div>
                     
                     <div class="mb-3">
                         <label for="role-behavior" class="form-label">Behavior</label>
-                        <select class="form-select" id="role-behavior" required>
-                            <option value="add" selected>Add role</option>
-                            <option value="replace">Replace previous roles</option>
+                        <select class="form-select" id="role-behavior" name="behavior" required>
+                            <option value="add" selected>Add Role</option>
+                            <option value="remove">Remove Role</option> {# Simplified behavior for now #}
                         </select>
-                        <div class="form-text">Determine how this role interacts with previously awarded roles.</div>
+                        <div class="form-text">Choose whether to add or remove this role at the specified level.</div>
                     </div>
                 </form>
             </div>
@@ -230,70 +206,143 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %} {# Changed from scripts #}
 <script>
-$(document).ready(function() {
-    // Handle form submissions
-    $('#role-settings-form').submit(function(e) {
-        e.preventDefault();
-        
-        const formData = {
-            stack_roles: $('#stack-roles').is(':checked'),
-            announce_roles: $('#announce-roles').is(':checked')
-        };
-        
-        // API call would go here
-        console.log('Saving role settings:', formData);
-        showToast('success', 'Role settings saved successfully');
-    });
-    
-    // Add role reward
-    $('#save-role-btn').click(function() {
-        const level = $('#role-level').val();
-        const roleId = $('#role-select').val();
-        const behavior = $('#role-behavior').val();
-        
-        if (!level || !roleId) {
-            showToast('error', 'Please fill in all required fields');
-            return;
-        }
-        
-        // API call would go here
-        console.log('Adding role reward:', { level, roleId, behavior });
-        
-        // Close modal
-        $('#addRoleModal').modal('hide');
-        
-        // Show success message
-        showToast('success', 'Role reward added successfully');
-    });
-    
-    // Function to show toasts
-    function showToast(type, message) {
-        const toastClass = type === 'success' ? 'bg-success' : 'bg-danger';
-        const toast = `
-            <div class="toast align-items-center ${toastClass} text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        `;
-        
-        const toastContainer = $('#toast-container');
-        toastContainer.append(toast);
-        
-        const toastElement = toastContainer.find('.toast').last();
-        const bsToast = new bootstrap.Toast(toastElement, { delay: 5000 });
-        bsToast.show();
-        
-        // Remove toast after it's hidden
-        toastElement.on('hidden.bs.toast', function() {
-            $(this).remove();
+document.addEventListener('DOMContentLoaded', function() {
+    const guildId = "{{ guild.guild_id }}";
+    const roleSettingsForm = document.getElementById('role-settings-form');
+    const addRoleForm = document.getElementById('add-role-form');
+    const saveRoleBtn = document.getElementById('save-role-btn');
+    const roleRewardsTableBody = document.getElementById('role-rewards-table');
+    const addRoleModalElement = document.getElementById('addRoleModal');
+    const addRoleModal = bootstrap.Modal.getOrCreateInstance(addRoleModalElement); // Get modal instance
+
+    // --- Save General Role Settings ---
+    if (roleSettingsForm) {
+        roleSettingsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const stackRoles = document.getElementById('stack-roles').checked;
+            const announceRoles = document.getElementById('announce-roles').checked;
+
+            const dataToSave = {
+                stack_roles: stackRoles,
+                announce_roles: announceRoles
+            };
+
+            API.post(`/api/guilds/${guildId}/settings`, dataToSave,
+                (data, message) => {
+                    showNotification(message || 'Role settings saved successfully!', 'success');
+                },
+                (error) => {
+                    showNotification(error || 'Failed to save role settings.', 'danger');
+                    console.error("Error saving role settings:", error);
+                }
+            );
         });
     }
+
+    // --- Add/Edit Role Reward Modal ---
+    if (saveRoleBtn) {
+        saveRoleBtn.addEventListener('click', function() {
+            const levelInput = document.getElementById('role-level');
+            const roleSelect = document.getElementById('role-select');
+            const behaviorSelect = document.getElementById('role-behavior');
+            // const editRewardIdInput = document.getElementById('edit-reward-id'); // For future edit functionality
+
+            const level = parseInt(levelInput.value);
+            const roleId = roleSelect.value.trim(); // Get value from text input and trim whitespace
+            // Removed logic to get role name from select option text
+            const roleName = null; // Set roleName to null
+            const behavior = behaviorSelect.value;
+            // const editingId = editRewardIdInput.value; // For future edit functionality
+
+            // Basic Validation
+            if (!level || level < 1) {
+                showNotification('Please enter a valid level (minimum 1).', 'danger');
+                return;
+            }
+            if (!roleId) {
+                showNotification('Please enter a Role ID.', 'danger');
+                return;
+            }
+            // Add validation for Role ID format (must be digits)
+            if (!/^[0-9]+$/.test(roleId)) {
+                showNotification('Role ID must contain only numbers.', 'danger');
+                return;
+            }
+
+            const dataToSend = {
+                level: level,
+                role_id: roleId,
+                role_name: roleName, // Send null for role_name
+                behavior: behavior
+            };
+
+            // --- API Call to Add Role ---
+            // For now, we only implement ADD. Edit would change the URL and method.
+            API.post(`/api/guilds/${guildId}/role_rewards`, dataToSend,
+                (data, message) => {
+                    showNotification(message || 'Role reward added successfully!', 'success');
+                    addRoleModal.hide(); // Hide modal on success
+                    addRoleForm.reset(); // Reset form
+                    // Optionally: Refresh page or dynamically add row to table
+                     setTimeout(() => location.reload(), 1000); // Simple refresh after 1s
+                },
+                (error) => {
+                    showNotification(error || 'Failed to add role reward.', 'danger');
+                    console.error("Error adding role reward:", error);
+                }
+            );
+        });
+    }
+    
+    // --- Reset Modal on Close ---
+    addRoleModalElement.addEventListener('hidden.bs.modal', function () {
+        addRoleForm.reset();
+        document.getElementById('addRoleModalLabel').textContent = 'Add Role Reward'; // Reset title
+        // document.getElementById('edit-reward-id').value = ''; // Reset edit ID
+    });
+
+    // --- Delete Role Reward ---
+    if (roleRewardsTableBody) {
+        roleRewardsTableBody.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('btn-delete-role')) {
+                const button = e.target;
+                const rewardId = button.getAttribute('data-reward-id');
+                
+                if (confirm('Are you sure you want to delete this role reward?')) {
+                    API.delete(`/api/guilds/${guildId}/role_rewards/${rewardId}`,
+                        (data, message) => {
+                            showNotification(message || 'Role reward deleted successfully!', 'success');
+                            // Remove row from table or refresh
+                            button.closest('tr').remove(); 
+                             // Check if table is now empty and show empty state
+                             if (roleRewardsTableBody.rows.length === 0) {
+                                 document.getElementById('role-rewards-container').innerHTML = `
+                                    <div id="no-roles" class="text-center py-5">
+                                        <i class="fas fa-user-tag fa-4x text-muted mb-3"></i>
+                                        <h4>No Role Rewards Configured</h4>
+                                        <p class="text-muted">Add role rewards to automatically assign roles when users reach specific levels.</p>
+                                        <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addRoleModal">
+                                            <i class="fas fa-plus"></i> Add First Role Reward
+                                        </button>
+                                    </div>`;
+                             }
+                        },
+                        (error) => {
+                            showNotification(error || 'Failed to delete role reward.', 'danger');
+                            console.error("Error deleting role reward:", error);
+                        }
+                    );
+                }
+            } 
+            // Add Edit button handling here later if needed
+            // else if (e.target && e.target.classList.contains('btn-edit-role')) { ... }
+        });
+    }
+    
+    // --- Re-use the showNotification function (ensure it's defined globally or in layout.html) ---
+    // Assuming showNotification is defined globally from previous steps
 });
 </script>
 {% endblock %} 

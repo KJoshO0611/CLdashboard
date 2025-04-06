@@ -1,7 +1,7 @@
 from flask import Blueprint, redirect, url_for, session, flash, request, Response
 from flask_login import login_user, logout_user, current_user, login_required
-from cldashboard import discord, db
-from cldashboard.models.user import User, Guild, user_guild
+from .. import discord, db
+from ..models.user import User, Guild, user_guild
 import os
 import requests
 import json
