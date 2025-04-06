@@ -3,6 +3,9 @@ from flask_login import login_required
 from .. import db
 from ..models.user import Guild, ServerConfig, ServerXpSettings, GuildEventSettings
 from ..middleware.auth import owner_required, admin_required, guild_admin_required
+from .. import db
+from ..models.user import Guild, ServerConfig, ServerXpSettings, GuildEventSettings
+from ..middleware.auth import owner_required, admin_required, guild_admin_required
 
 admin = Blueprint('admin', __name__)
 
@@ -84,7 +87,7 @@ def guild_xp_settings(guild_id):
         xp_settings=xp_settings
     )
 
-@admin.route('/dashboard/guilds/<guild_id>/roles')
+@admin.route('/dashboard/guilds/<guild_id>/level_roles')
 @login_required
 @guild_admin_required
 def guild_roles(guild_id):
@@ -94,8 +97,8 @@ def guild_roles(guild_id):
     if not guild:
         abort(404)
     
-    # Fetch role rewards (already sorted by level due to relationship definition)
-    role_rewards = guild.role_rewards 
+    # Fetch level roles (already sorted by level due to relationship definition)
+    level_roles = guild.level_roles 
     
     # Fetch server config for stack/announce settings
     settings = guild.settings
@@ -111,7 +114,7 @@ def guild_roles(guild_id):
         'admin/guild_roles.html', 
         title=f'{guild.name} - Role Rewards', 
         guild=guild,
-        role_rewards=role_rewards, # Pass the fetched role rewards
+        role_rewards=level_roles, # Pass the fetched level roles
         settings=settings # Pass the settings object
     )
 
@@ -133,10 +136,21 @@ def manage_achievements(guild_id):
         db.session.add(settings)
         db.session.commit()
         settings = guild.settings # Re-fetch
+        
+    # Fetch server config for achievement settings
+    settings = guild.settings
+    if not settings:
+        # Create settings if they don't exist (should ideally exist, but safety check)
+        settings = ServerConfig(guild_id=guild.guild_id)
+        db.session.add(settings)
+        db.session.commit()
+        settings = guild.settings # Re-fetch
     
     return render_template(
         'admin/manage_achievements.html', 
         title=f'{guild.name} - Manage Achievements', 
+        guild=guild,
+        settings=settings # Pass settings object
         guild=guild,
         settings=settings # Pass settings object
     )
@@ -166,10 +180,29 @@ def manage_events(guild_id):
         db.session.add(event_settings)
         db.session.commit()
         event_settings = guild.event_settings # Re-fetch
+        
+    # Fetch server config for event channel settings
+    settings = guild.settings # General settings (like event_channel)
+    if not settings:
+        settings = ServerConfig(guild_id=guild.guild_id)
+        db.session.add(settings)
+        db.session.commit()
+        settings = guild.settings # Re-fetch
+        
+    # Fetch specific event settings (like bonus XP)
+    event_settings = guild.event_settings
+    if not event_settings:
+        event_settings = GuildEventSettings(guild_id=guild.guild_id)
+        db.session.add(event_settings)
+        db.session.commit()
+        event_settings = guild.event_settings # Re-fetch
     
     return render_template(
         'admin/manage_events.html', 
         title=f'{guild.name} - Manage Events', 
+        guild=guild,
+        settings=settings, # Pass general settings
+        event_settings=event_settings # Pass event-specific settings
         guild=guild,
         settings=settings, # Pass general settings
         event_settings=event_settings # Pass event-specific settings

@@ -1,6 +1,8 @@
 from .. import db, login_manager
+from .. import db, login_manager
 from flask_login import UserMixin
 from datetime import datetime
+from sqlalchemy import Column, String, DateTime, func, ForeignKey, Integer, Boolean, JSON, Float
 from sqlalchemy import Column, String, DateTime, func, ForeignKey, Integer, Boolean, JSON, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
@@ -106,8 +108,8 @@ class User(db.Model, UserMixin):
         return user
 
 # New RoleReward Model - Moved before Guild
-class RoleReward(db.Model):
-    __tablename__ = 'role_rewards'
+class LevelRole(db.Model):
+    __tablename__ = 'level_roles'
     
     id = Column(Integer, primary_key=True)
     guild_id = Column(String, db.ForeignKey('guilds.guild_id'), nullable=False)
@@ -117,10 +119,10 @@ class RoleReward(db.Model):
     behavior = Column(String, default='add', nullable=False) # 'add' or 'remove'
     
     # Relationship defined here, back_populates connects to Guild.role_rewards
-    guild = relationship('Guild', back_populates='role_rewards') 
+    guild = relationship('Guild', back_populates='level_roles') 
     
     def __repr__(self):
-        return f"RoleReward(guild={self.guild_id}, level={self.level}, role={self.role_id})" 
+        return f"LevelRole(guild={self.guild_id}, level={self.level}, role={self.role_id})" 
 
 class Guild(db.Model):
     __tablename__ = 'guilds'
@@ -142,8 +144,8 @@ class Guild(db.Model):
     xp_settings = relationship('ServerXpSettings', backref='guild', uselist=False,
                                 foreign_keys="ServerXpSettings.guild_id",
                                 primaryjoin="Guild.guild_id == ServerXpSettings.guild_id")
-    # Relationship defined here, connects to RoleReward.guild
-    role_rewards = relationship('RoleReward', order_by=RoleReward.level, back_populates='guild') 
+    # Relationship defined here, connects to LevelRole.guild
+    level_roles = relationship('LevelRole', back_populates='guild', cascade='all, delete-orphan', order_by="LevelRole.level") 
     event_settings = relationship('GuildEventSettings', backref='guild', uselist=False)
     
     def __repr__(self):
@@ -210,6 +212,11 @@ class ServerConfig(db.Model):
     # Role Reward Settings
     stack_roles = Column(Boolean, default=True)
     announce_roles = Column(Boolean, default=True)
+    announce_achievements = Column(Boolean, default=True)
+
+    # Role Reward Settings
+    stack_roles = Column(Boolean, default=True)
+    announce_roles = Column(Boolean, default=True)
     
     # Other settings can be added as needed
     
@@ -230,6 +237,65 @@ class ServerXpSettings(db.Model):
     
     def __repr__(self):
         return f"ServerXpSettings(guild_id={self.guild_id})" 
+
+# --- New Event Model ---
+class Event(db.Model):
+    __tablename__ = 'discord_scheduled_events'
+
+    internal_id = Column(Integer, primary_key=True) # Auto-incrementing PK
+    event_id = Column(String, nullable=True, index=True) # Discord Event ID (can be null for non-Discord events?)
+    guild_id = Column(String, db.ForeignKey('guilds.guild_id'), nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(String(1000))
+    start_time = Column(db.Float, nullable=False) # Unix timestamp (double precision)
+    end_time = Column(db.Float, nullable=True)    # Unix timestamp (double precision)
+    event_type = Column(String(50)) # e.g., 'VOICE', 'STAGE', 'EXTERNAL'
+    status = Column(String(50), index=True) # e.g., 'SCHEDULED', 'ACTIVE', 'COMPLETED', 'CANCELLED'
+    creator_id = Column(String) 
+    associated_boost_id = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=False), server_default=func.now()) # Ensure timezone matches DB
+    updated_at = Column(DateTime(timezone=False), onupdate=func.now()) # Ensure timezone matches DB
+    
+    guild = relationship('Guild')
+
+    def __repr__(self):
+        return f"<Event {self.internal_id}: {self.name} ({self.guild_id})>"
+
+# Add relationship to Guild Model (if needed, though likely querying events directly)
+# Guild.events = relationship('Event', backref='guild', lazy=True) 
+
+# --- New Guild Event Settings Model ---
+class GuildEventSettings(db.Model):
+    __tablename__ = 'guild_event_settings'
+
+    guild_id = Column(String, db.ForeignKey('guilds.guild_id'), primary_key=True)
+    attendance_bonus_xp = Column(Integer, default=100, nullable=False)
+    # Add other event-specific settings here if needed in the future
+
+    def __repr__(self):
+        return f"<GuildEventSettings {self.guild_id}: BonusXP={self.attendance_bonus_xp}>" 
+
+# --- New Event Attendance Model ---
+class EventAttendance(db.Model):
+    __tablename__ = 'event_attendance'
+
+    id = Column(Integer, primary_key=True)
+    event_id = Column(String, nullable=False, index=True) # Link to Event.event_id (Discord ID)
+    user_id = Column(String, db.ForeignKey('users.discord_id'), nullable=False, index=True)
+    status = Column(String(50)) # e.g., 'active', 'completed', 'absent'?
+    joined_at = Column(DateTime(timezone=False)) # Use timezone=False if DB doesn't store timezone
+    guild_id = Column(String, db.ForeignKey('guilds.guild_id'), nullable=False, index=True)
+    
+    # Relationships (Optional, depending on query needs)
+    user = relationship('User') 
+    # Event relationship might be tricky if using event_id string directly
+    # Instead, usually query attendance based on event_id
+
+    def __repr__(self):
+        return f"<EventAttendance event={self.event_id} user={self.user_id} status={self.status}>"
+
+# Add relationship to Guild Model (if needed, though likely querying events directly)
+# Guild.events = relationship('Event', backref='guild', lazy=True) 
 
 # --- New Event Model ---
 class Event(db.Model):

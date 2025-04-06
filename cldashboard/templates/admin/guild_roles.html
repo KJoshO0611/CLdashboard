@@ -8,11 +8,11 @@
                 <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
                 <li class="breadcrumb-item"><a href="{{ url_for('dashboard.guild_list') }}">Servers</a></li>
                 <li class="breadcrumb-item"><a href="{{ url_for('dashboard.guild_overview', guild_id=guild.guild_id) }}">{{ guild.name }}</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Role Rewards</li>
+                <li class="breadcrumb-item active" aria-current="page">Level Roles</li>
             </ol>
         </nav>
         <div class="d-flex justify-content-between align-items-center">
-            <h1 class="mb-0">{{ guild.name }} Role Rewards</h1>
+            <h1 class="mb-0">{{ guild.name }} Level Roles</h1>
             {% if guild.icon %}
             <img src="{{ guild.icon }}" alt="{{ guild.name }}" class="rounded-circle" style="width: 64px; height: 64px;">
             {% else %}
@@ -42,7 +42,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link active" href="{{ url_for('admin.guild_roles', guild_id=guild.guild_id) }}">
-                        <i class="fas fa-user-tag"></i> Role Rewards
+                        <i class="fas fa-user-tag"></i> Level Roles
                     </a>
                 </li>
                 <li class="nav-item">
@@ -82,9 +82,9 @@
     <div class="col-md-9">
         <div class="card mb-4">
             <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Role Rewards</h5>
+                <h5 class="card-title mb-0">Level Roles</h5>
                 <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addRoleModal">
-                    <i class="fas fa-plus"></i> Add Role Reward
+                    <i class="fas fa-plus"></i> Add Level Role
                 </button>
             </div>
             <div class="card-body">
@@ -92,8 +92,8 @@
                     <i class="fas fa-info-circle"></i> Role rewards are automatically assigned to users when they reach the specified level.
                 </div>
                 
-                <div id="role-rewards-container">
-                    {% if role_rewards %}
+                <div id="level-roles-container">
+                    {% if level_roles %}
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
@@ -104,34 +104,42 @@
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="role-rewards-table">
-                                {% for reward in role_rewards %}
+                            <tbody id="level-roles-table">
+                                {% for reward in level_roles %}
                                 <tr>
+                                    <td>{{ reward.level }}</td>
                                     <td>{{ reward.level }}</td>
                                     <td>
                                         {# Try to display name, fall back to ID #}
                                         <span class="badge bg-secondary">{{ reward.role_name if reward.role_name else reward.role_id }}</span> 
+                                        {# Try to display name, fall back to ID #}
+                                        <span class="badge bg-secondary">{{ reward.role_name if reward.role_name else reward.role_id }}</span> 
                                     </td>
                                     <td>{{ reward.behavior.replace('_', ' ').title() }}</td> {# Format behavior nicely #}
+                                    <td>{{ reward.behavior.replace('_', ' ').title() }}</td> {# Format behavior nicely #}
                                     <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1 btn-edit-role" data-reward-id="{{ reward.id }}" disabled>Edit</button> {# Edit disabled for now #}
+                                        <button class="btn btn-sm btn-outline-danger btn-delete-role" data-reward-id="{{ reward.id }}">Delete</button>
                                         <button class="btn btn-sm btn-outline-primary me-1 btn-edit-role" data-reward-id="{{ reward.id }}" disabled>Edit</button> {# Edit disabled for now #}
                                         <button class="btn btn-sm btn-outline-danger btn-delete-role" data-reward-id="{{ reward.id }}">Delete</button>
                                     </td>
                                 </tr>
                                 {% endfor %}
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
                     {% else %}
-                    <!-- Empty state for when no role rewards exist -->
+                    <!-- Empty state for when no level roles exist -->
                     <div id="no-roles" class="text-center py-5">
                         <i class="fas fa-user-tag fa-4x text-muted mb-3"></i>
-                        <h4>No Role Rewards Configured</h4>
-                        <p class="text-muted">Add role rewards to automatically assign roles when users reach specific levels.</p>
+                        <h4>No Level Roles Configured</h4>
+                        <p class="text-muted">Add level roles to automatically assign roles when users reach specific levels.</p>
                         <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addRoleModal">
-                            <i class="fas fa-plus"></i> Add First Role Reward
+                            <i class="fas fa-plus"></i> Add First Level Role
                         </button>
                     </div>
+                    {% endif %}
                     {% endif %}
                 </div>
             </div>
@@ -145,14 +153,15 @@
                 <form id="role-settings-form">
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" id="stack-roles" name="stack_roles" {% if settings.stack_roles %}checked{% endif %}>
+                        <input type="checkbox" class="form-check-input" id="stack-roles" name="stack_roles" {% if settings.stack_roles %}checked{% endif %}>
                         <label class="form-check-label" for="stack-roles">Stack Roles</label>
-                        <div class="form-text">If enabled, users will keep their previous role rewards when earning new ones.</div>
+                        <div class="form-text">If enabled, users will keep their previous level roles when earning new ones.</div>
                     </div>
                     
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" id="announce-roles" name="announce_roles" {% if settings.announce_roles %}checked{% endif %}>
-                        <label class="form-check-label" for="announce-roles">Announce Role Rewards</label>
-                        <div class="form-text">If enabled, the bot will announce when a user receives a role reward.</div>
+                        <label class="form-check-label" for="announce-roles">Announce Level Roles</label>
+                        <div class="form-text">If enabled, the bot will announce when a user receives a level role.</div>
                     </div>
                     
                     <button type="submit" class="btn btn-primary">Save Settings</button>
@@ -163,23 +172,31 @@
 </div>
 
 <!-- Add/Edit Role Modal -->
+<!-- Add/Edit Role Modal -->
 <div class="modal fade" id="addRoleModal" tabindex="-1" aria-labelledby="addRoleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-primary-custom text-white">
-                <h5 class="modal-title" id="addRoleModalLabel">Add Role Reward</h5> {# Title changes for edit #}
+                <h5 class="modal-title" id="addRoleModalLabel">Add Level Role</h5> {# Title changes for edit #}
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="add-role-form">
                     <input type="hidden" id="edit-reward-id" value=""> {# For storing ID when editing #}
+                    <input type="hidden" id="edit-reward-id" value=""> {# For storing ID when editing #}
                     <div class="mb-3">
                         <label for="role-level" class="form-label">Level Requirement</label>
+                        <input type="number" class="form-control" id="role-level" name="level" min="1" max="100" required>
                         <input type="number" class="form-control" id="role-level" name="level" min="1" max="100" required>
                         <div class="form-text">The level at which this role will be awarded.</div>
                     </div>
                     
                     <div class="mb-3">
+                        <label for="role-select" class="form-label">Role ID</label> {# Changed label #}
+                        {# Replaced select with input type=text #}
+                        <input type="text" class="form-control" id="role-select" name="role_id" placeholder="Enter Discord Role ID" required>
+                        {# Removed select and options #}
+                        <div class="form-text">Enter the exact ID of the Discord role to award.</div> {# Updated helper text #}
                         <label for="role-select" class="form-label">Role ID</label> {# Changed label #}
                         {# Replaced select with input type=text #}
                         <input type="text" class="form-control" id="role-select" name="role_id" placeholder="Enter Discord Role ID" required>
@@ -192,14 +209,18 @@
                         <select class="form-select" id="role-behavior" name="behavior" required>
                             <option value="add" selected>Add Role</option>
                             <option value="remove">Remove Role</option> {# Simplified behavior for now #}
+                        <select class="form-select" id="role-behavior" name="behavior" required>
+                            <option value="add" selected>Add Role</option>
+                            <option value="remove">Remove Role</option> {# Simplified behavior for now #}
                         </select>
+                        <div class="form-text">Choose whether to add or remove this role at the specified level.</div>
                         <div class="form-text">Choose whether to add or remove this role at the specified level.</div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="save-role-btn">Save Role Reward</button>
+                <button type="button" class="btn btn-primary" id="save-role-btn">Save Level Role</button>
             </div>
         </div>
     </div>
@@ -207,13 +228,14 @@
 {% endblock %}
 
 {% block extra_js %} {# Changed from scripts #}
+{% block extra_js %} {# Changed from scripts #}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const guildId = "{{ guild.guild_id }}";
     const roleSettingsForm = document.getElementById('role-settings-form');
     const addRoleForm = document.getElementById('add-role-form');
     const saveRoleBtn = document.getElementById('save-role-btn');
-    const roleRewardsTableBody = document.getElementById('role-rewards-table');
+    const roleRewardsTableBody = document.getElementById('level-roles-table');
     const addRoleModalElement = document.getElementById('addRoleModal');
     const addRoleModal = bootstrap.Modal.getOrCreateInstance(addRoleModalElement); // Get modal instance
 
@@ -241,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Add/Edit Role Reward Modal ---
+    // --- Add/Edit Level Role Modal ---
     if (saveRoleBtn) {
         saveRoleBtn.addEventListener('click', function() {
             const levelInput = document.getElementById('role-level');
@@ -280,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // --- API Call to Add Role ---
             // For now, we only implement ADD. Edit would change the URL and method.
-            API.post(`/api/guilds/${guildId}/role_rewards`, dataToSend,
+            API.post(`/api/guilds/${guildId}/level_roles`, dataToSend,
                 (data, message) => {
                     showNotification(message || 'Role reward added successfully!', 'success');
                     addRoleModal.hide(); // Hide modal on success
@@ -289,8 +311,8 @@ document.addEventListener('DOMContentLoaded', function() {
                      setTimeout(() => location.reload(), 1000); // Simple refresh after 1s
                 },
                 (error) => {
-                    showNotification(error || 'Failed to add role reward.', 'danger');
-                    console.error("Error adding role reward:", error);
+                    showNotification(error || 'Failed to add level role.', 'danger');
+                    console.error("Error adding level role:", error);
                 }
             );
         });
@@ -299,39 +321,39 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Reset Modal on Close ---
     addRoleModalElement.addEventListener('hidden.bs.modal', function () {
         addRoleForm.reset();
-        document.getElementById('addRoleModalLabel').textContent = 'Add Role Reward'; // Reset title
+        document.getElementById('addRoleModalLabel').textContent = 'Add Level Role'; // Reset title
         // document.getElementById('edit-reward-id').value = ''; // Reset edit ID
     });
 
-    // --- Delete Role Reward ---
+    // --- Delete Level Role ---
     if (roleRewardsTableBody) {
         roleRewardsTableBody.addEventListener('click', function(e) {
             if (e.target && e.target.classList.contains('btn-delete-role')) {
                 const button = e.target;
                 const rewardId = button.getAttribute('data-reward-id');
                 
-                if (confirm('Are you sure you want to delete this role reward?')) {
-                    API.delete(`/api/guilds/${guildId}/role_rewards/${rewardId}`,
+                if (confirm('Are you sure you want to delete this level role?')) {
+                    API.delete(`/api/guilds/${guildId}/level_roles/${rewardId}`,
                         (data, message) => {
                             showNotification(message || 'Role reward deleted successfully!', 'success');
                             // Remove row from table or refresh
                             button.closest('tr').remove(); 
                              // Check if table is now empty and show empty state
                              if (roleRewardsTableBody.rows.length === 0) {
-                                 document.getElementById('role-rewards-container').innerHTML = `
+                                 document.getElementById('level-roles-container').innerHTML = `
                                     <div id="no-roles" class="text-center py-5">
                                         <i class="fas fa-user-tag fa-4x text-muted mb-3"></i>
-                                        <h4>No Role Rewards Configured</h4>
-                                        <p class="text-muted">Add role rewards to automatically assign roles when users reach specific levels.</p>
+                                        <h4>No Level Roles Configured</h4>
+                                        <p class="text-muted">Add level roles to automatically assign roles when users reach specific levels.</p>
                                         <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addRoleModal">
-                                            <i class="fas fa-plus"></i> Add First Role Reward
+                                            <i class="fas fa-plus"></i> Add First Level Role
                                         </button>
                                     </div>`;
                              }
                         },
                         (error) => {
-                            showNotification(error || 'Failed to delete role reward.', 'danger');
-                            console.error("Error deleting role reward:", error);
+                            showNotification(error || 'Failed to delete level role.', 'danger');
+                            console.error("Error deleting level role:", error);
                         }
                     );
                 }
