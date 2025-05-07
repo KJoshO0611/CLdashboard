@@ -151,8 +151,6 @@ def manage_achievements(guild_id):
         title=f'{guild.name} - Manage Achievements', 
         guild=guild,
         settings=settings # Pass settings object
-        guild=guild,
-        settings=settings # Pass settings object
     )
 
 @admin.route('/dashboard/guilds/<guild_id>/events/manage')
@@ -200,9 +198,6 @@ def manage_events(guild_id):
     return render_template(
         'admin/manage_events.html', 
         title=f'{guild.name} - Manage Events', 
-        guild=guild,
-        settings=settings, # Pass general settings
-        event_settings=event_settings # Pass event-specific settings
         guild=guild,
         settings=settings, # Pass general settings
         event_settings=event_settings # Pass event-specific settings

@@ -108,23 +108,15 @@
                                 {% for reward in level_roles %}
                                 <tr>
                                     <td>{{ reward.level }}</td>
-                                    <td>{{ reward.level }}</td>
                                     <td>
-                                        {# Try to display name, fall back to ID #}
-                                        <span class="badge bg-secondary">{{ reward.role_name if reward.role_name else reward.role_id }}</span> 
-                                        {# Try to display name, fall back to ID #}
-                                        <span class="badge bg-secondary">{{ reward.role_name if reward.role_name else reward.role_id }}</span> 
+                                        <span class="badge bg-secondary">{{ reward.role_name if reward.role_name else reward.role_id }}</span>
                                     </td>
-                                    <td>{{ reward.behavior.replace('_', ' ').title() }}</td> {# Format behavior nicely #}
-                                    <td>{{ reward.behavior.replace('_', ' ').title() }}</td> {# Format behavior nicely #}
+                                    <td>{{ reward.behavior.replace('_', ' ').title() }}</td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-primary me-1 btn-edit-role" data-reward-id="{{ reward.id }}" disabled>Edit</button> {# Edit disabled for now #}
-                                        <button class="btn btn-sm btn-outline-danger btn-delete-role" data-reward-id="{{ reward.id }}">Delete</button>
-                                        <button class="btn btn-sm btn-outline-primary me-1 btn-edit-role" data-reward-id="{{ reward.id }}" disabled>Edit</button> {# Edit disabled for now #}
+                                        <button class="btn btn-sm btn-outline-primary me-1 btn-edit-role" data-reward-id="{{ reward.id }}" disabled>Edit</button>
                                         <button class="btn btn-sm btn-outline-danger btn-delete-role" data-reward-id="{{ reward.id }}">Delete</button>
                                     </td>
                                 </tr>
-                                {% endfor %}
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -139,7 +131,6 @@
                             <i class="fas fa-plus"></i> Add First Level Role
                         </button>
                     </div>
-                    {% endif %}
                     {% endif %}
                 </div>
             </div>
@@ -367,4 +358,4 @@ document.addEventListener('DOMContentLoaded', function() {
     // Assuming showNotification is defined globally from previous steps
 });
 </script>
-{% endblock %} 
+{% endblock %}

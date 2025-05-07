@@ -637,36 +637,7 @@ def create_guild_achievement(guild_id):
     for field in required_fields:
         if field not in data:
             return api_error(f"Missing required field: {field}")
-
-    icon_url_path = None # Store the URL path, not filename
-    # Check if the post request has the file part
-    if 'icon_file' in request.files:
-        file = request.files['icon_file']
-        if file and file.filename != '' and allowed_file(file.filename):
-            try:
-                # Ensure upload directory exists using config path
-                if not os.path.exists(upload_folder):
-                     os.makedirs(upload_folder)
-                     current_app.logger.info(f"Created upload directory: {upload_folder}")
-
-                original_filename = secure_filename(file.filename)
-                file_ext = os.path.splitext(original_filename)[1]
-                unique_filename = f"{uuid.uuid4()}{file_ext}"
-                file_path = os.path.join(upload_folder, unique_filename) # Filesystem path for saving
-                file.save(file_path)
-                
-                # Construct the URL path for storage/frontend use
-                icon_url_path = os.path.join(upload_url_base, unique_filename).replace("\\", "/") # Use URL path separator
-                current_app.logger.info(f"Saved achievement icon: {file_path}, URL Path: {icon_url_path}")
-            except Exception as e:
-                 current_app.logger.error(f"Error saving uploaded icon: {e}")
-                 return api_error(f"Failed to save uploaded icon: {str(e)}")
-        elif file and file.filename != '' and not allowed_file(file.filename):
-             return api_error("Invalid file type for icon. Allowed: png, jpg, jpeg, gif, webp")
-
-    try:
-        # Insert into database, removing color and secret
-
+            
     icon_url_path = None # Store the URL path, not filename
     # Check if the post request has the file part
     if 'icon_file' in request.files:
@@ -698,22 +669,18 @@ def create_guild_achievement(guild_id):
         result = db.session.execute(text('''
             INSERT INTO achievements (
                 guild_id, name, description, requirement_type, 
-                requirement_value, icon_path 
-                requirement_value, icon_path 
+                requirement_value, icon_path
             ) VALUES (
                 :guild_id, :name, :description, :requirement_type,
-                :requirement_value, :icon_path 
-                :requirement_value, :icon_path 
+                :requirement_value, :icon_path
             ) RETURNING id
         '''), {
             'guild_id': guild_id,
             'name': data['name'],
             'description': data['description'],
             'requirement_type': data['requirement_type'],
-            'requirement_value': int(data['requirement_value']), 
-            'icon_path': icon_url_path # Store the URL path
-            'requirement_value': int(data['requirement_value']), 
-            'icon_path': icon_url_path # Store the URL path
+            'requirement_value': int(data['requirement_value']),
+            'icon_path': icon_url_path
         })
         
         achievement_id = result.scalar()
@@ -723,26 +690,12 @@ def create_guild_achievement(guild_id):
             "id": achievement_id,
             "message": "Achievement created successfully",
             "icon_url_path": icon_url_path # Return URL path
-            "message": "Achievement created successfully",
-            "icon_url_path": icon_url_path # Return URL path
         })
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Failed to create achievement in DB: {e}")
         current_app.logger.error(f"Failed to create achievement in DB: {e}")
         return api_error(f"Failed to create achievement: {str(e)}")
-
-# --- Need to Update PUT endpoint similarly if editing is required ---
-@api.route('/api/guilds/<string:guild_id>/achievements/<int:achievement_id>', methods=['PUT'])
-@login_required
-@guild_admin_required
-def update_guild_achievement(guild_id, achievement_id):
-    # TODO: Update this endpoint to handle multipart/form-data like the POST endpoint
-    # Fetch existing achievement
-    # Handle potential new file upload (save file, update icon_path)
-    # Handle removal of icon? (Maybe pass a flag or check if icon_file is empty?)
-    # Update other fields from request.form
-    return api_error("Achievement update with file upload not yet implemented.")
 
 # --- Need to Update PUT endpoint similarly if editing is required ---
 @api.route('/api/guilds/<string:guild_id>/achievements/<int:achievement_id>', methods=['PUT'])
