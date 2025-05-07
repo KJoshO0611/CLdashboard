@@ -1,5 +1,5 @@
 import os
-from cldashboard import create_app
+from assets import create_app
 
 app = create_app()
 

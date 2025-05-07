@@ -9,4 +9,4 @@ create_local_db.sql
 run.py
 setup_local_db.py
 switch_env,py
-cldashboard/cldashboard/flask_session
+assets/flask_session
