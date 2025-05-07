@@ -174,24 +174,15 @@
             <div class="modal-body">
                 <form id="add-role-form">
                     <input type="hidden" id="edit-reward-id" value=""> {# For storing ID when editing #}
-                    <input type="hidden" id="edit-reward-id" value=""> {# For storing ID when editing #}
                     <div class="mb-3">
                         <label for="role-level" class="form-label">Level Requirement</label>
-                        <input type="number" class="form-control" id="role-level" name="level" min="1" max="100" required>
                         <input type="number" class="form-control" id="role-level" name="level" min="1" max="100" required>
                         <div class="form-text">The level at which this role will be awarded.</div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="role-select" class="form-label">Role ID</label> {# Changed label #}
-                        {# Replaced select with input type=text #}
                         <input type="text" class="form-control" id="role-select" name="role_id" placeholder="Enter Discord Role ID" required>
-                        {# Removed select and options #}
-                        <div class="form-text">Enter the exact ID of the Discord role to award.</div> {# Updated helper text #}
-                        <label for="role-select" class="form-label">Role ID</label> {# Changed label #}
-                        {# Replaced select with input type=text #}
-                        <input type="text" class="form-control" id="role-select" name="role_id" placeholder="Enter Discord Role ID" required>
-                        {# Removed select and options #}
                         <div class="form-text">Enter the exact ID of the Discord role to award.</div> {# Updated helper text #}
                     </div>
                     
@@ -200,11 +191,7 @@
                         <select class="form-select" id="role-behavior" name="behavior" required>
                             <option value="add" selected>Add Role</option>
                             <option value="remove">Remove Role</option> {# Simplified behavior for now #}
-                        <select class="form-select" id="role-behavior" name="behavior" required>
-                            <option value="add" selected>Add Role</option>
-                            <option value="remove">Remove Role</option> {# Simplified behavior for now #}
                         </select>
-                        <div class="form-text">Choose whether to add or remove this role at the specified level.</div>
                         <div class="form-text">Choose whether to add or remove this role at the specified level.</div>
                     </div>
                 </form>
@@ -218,7 +205,6 @@
 </div>
 {% endblock %}
 
-{% block extra_js %} {# Changed from scripts #}
 {% block extra_js %} {# Changed from scripts #}
 <script>
 document.addEventListener('DOMContentLoaded', function() {

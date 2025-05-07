@@ -114,7 +114,7 @@ def guild_roles(guild_id):
         'admin/guild_roles.html', 
         title=f'{guild.name} - Role Rewards', 
         guild=guild,
-        role_rewards=level_roles, # Pass the fetched level roles
+        level_roles=level_roles, # Pass the fetched level roles
         settings=settings # Pass the settings object
     )
 
