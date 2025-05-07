@@ -300,18 +300,37 @@ document.addEventListener('DOMContentLoaded', function() {
         // Determine icon display: Use icon_path if present, otherwise default FontAwesome
         let iconHtml;
         if (achievement.icon_path) {
-            // Assuming icon_path is a URL/relative path like /uploads/achievements/xyz.png
             iconHtml = `<img src="${achievement.icon_path}" alt="Icon" class="me-2" style="width: 20px; height: 20px; vertical-align: middle;">`;
         } else {
-            // Fallback to FontAwesome icon using achievement.icon (if that field still exists) or default
-            const faIcon = achievement.icon || 'trophy'; // Assuming achievement.icon holds the FontAwesome name
+            const faIcon = achievement.icon || 'trophy';
             iconHtml = `<i class="fas fa-${faIcon} me-2"></i>`;
+        }
+
+        // Tiers rendering
+        let tiersHtml = '';
+        if (achievement.tiers && achievement.tiers.length > 0) {
+            tiersHtml = `
+                <div class="achievement-tiers mt-3">
+                    <h6 class="fw-bold mb-2">Tiers</h6>
+                    <ul class="list-group list-group-flush">
+                        ${achievement.tiers.map(tier => `
+                            <li class="list-group-item px-0 py-1">
+                                <span class="badge bg-primary me-2">Tier ${tier.tier_level}</span>
+                                <span class="fw-semibold">${tier.title || 'Untitled'}</span>
+                                <span class="text-muted ms-2">Requirement: <strong>${tier.requirement_value || 'N/A'}</strong></span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+        } else {
+            tiersHtml = `<div class="achievement-tiers mt-3"><span class="text-muted">No tiers configured for this achievement.</span></div>`;
         }
 
         col.innerHTML = `
             <div class="card h-100 achievement-card" data-achievement-id="${achievement.id}">
                 <div class="card-header text-white d-flex justify-content-between align-items-center" style="background-color: ${achievement.color || '#6a1b9a'};">
-                    <h6 class="mb-0">${iconHtml} ${achievement.name || 'Unnamed Achievement'}</h6> {# Use iconHtml #}
+                    <h6 class="mb-0">${iconHtml} ${achievement.name || 'Unnamed Achievement'}</h6>
                     <div class="dropdown">
                         <button class="btn btn-sm text-white" type="button" data-bs-toggle="dropdown">
                             <i class="fas fa-ellipsis-v"></i>
@@ -326,16 +345,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p class="card-text">${achievement.description || 'No description provided.'}</p>
                     <div class="d-flex justify-content-between text-muted small">
                         <span>Type: <strong>${formattedType}</strong></span>
-                        <span>Requirement: <strong>${achievement.requirement || 'N/A'}</strong></span>
                     </div>
-                     ${achievement.secret ? '<span class="badge bg-secondary mt-2">Secret</span>' : ''}
+                    ${achievement.secret ? '<span class="badge bg-secondary mt-2">Secret</span>' : ''}
+                    ${tiersHtml}
                 </div>
                 <div class="card-footer bg-light">
-                    <small class="text-muted">${completedCount} users completed (${completionPercentage}%)</small> {# Use corrected count #}
+                    <small class="text-muted">${completedCount} users completed (${completionPercentage}%)</small>
                 </div>
             </div>
         `;
-        console.log("Finished creating card HTML"); // Log: Before returning
+        console.log("Finished creating card HTML");
         return col;
     }
 
