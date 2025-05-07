@@ -14,6 +14,7 @@ from sqlalchemy import text
 from pathlib import Path
 import subprocess
 from flask_migrate import Migrate
+from flask_caching import Cache
 
 # Load environment variables
 load_dotenv()
@@ -51,6 +52,12 @@ def create_app(config_class=Config):
     """Create and configure the Flask application"""
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_class)
+
+    # Flask-Caching configuration (simple in-memory, can be swapped for Redis, etc.)
+    app.config['CACHE_TYPE'] = 'SimpleCache'
+    app.config['CACHE_DEFAULT_TIMEOUT'] = 300  # 5 minutes
+    cache = Cache(app)
+    app.cache = cache  # Make cache accessible via app
     
     # Flask configuration
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY") or "dev-secret-key-change-in-production"
@@ -105,6 +112,16 @@ def create_app(config_class=Config):
     csrf.init_app(app)
     discord.init_app(app)
     migrate.init_app(app, db)
+
+    # Example: cache a simple function
+    @app.cache.cached(timeout=60, key_prefix='expensive_computation')
+    def expensive_computation():
+        # Simulate expensive work
+        import time
+        time.sleep(2)
+        return 'Expensive result!'
+
+    app.expensive_computation = expensive_computation
     
     # Create flask_session directory if it doesn't exist
     os.makedirs(app.config["SESSION_FILE_DIR"], exist_ok=True)
