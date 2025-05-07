@@ -66,14 +66,30 @@
                             </div>
                         </div>
                         <p class="card-text">{{ achievement.description }}</p>
+
+                        <!-- Achievement Tiers -->
+                        {% if achievement.tiers and achievement.tiers|length > 0 %}
+                        <div class="mb-2">
+                            <strong>Tiers:</strong>
+                            <ul class="list-group list-group-flush">
+                                {% for tier in achievement.tiers %}
+                                <li class="list-group-item px-0 py-1">
+                                    <span class="fw-bold">{{ tier.title }}</span> (Level {{ tier.tier_level }}) &mdash; Requirement: <span class="text-primary">{{ tier.requirement_value }}</span>
+                                    {% if tier.reward_xp %}<span class="ms-2 badge bg-info">XP: {{ tier.reward_xp }}</span>{% endif %}
+                                    {% if tier.reward_role_id %}<span class="ms-2 badge bg-secondary">Role: {{ tier.reward_role_id }}</span>{% endif %}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
                         <div class="progress mb-3" style="height: 6px;">
                             <div class="progress-bar bg-primary" 
                                  role="progressbar" 
                                  data-progress="{{ achievement.progress }}"
-                                 data-requirement="{{ achievement.requirement }}"
+                                 data-requirement="1"  
                                  aria-valuenow="{{ achievement.progress }}" 
                                  aria-valuemin="0" 
-                                 aria-valuemax="{{ achievement.requirement }}">
+                                 aria-valuemax="1">
                             </div>
                         </div>
                         <div class="d-flex justify-content-between align-items-center">

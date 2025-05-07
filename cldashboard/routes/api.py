@@ -535,14 +535,13 @@ def get_guild_achievements(guild_id):
         print(f"Error fetching member count for achievements page (guild {guild_id}): {e}")
         member_count = 0 # Default to 0 on error
     
-    # Get achievements from the database (The rest of this query seems okay)
+    # Get achievements from the database
     achievements = db.session.execute(text('''
         SELECT 
             a.id,
             a.name,
             a.description,
             a.requirement_type,
-            t.requirement_value,
             a.icon_path,
             0 as progress,
             ua.completed,
@@ -552,7 +551,6 @@ def get_guild_achievements(guild_id):
              AND ua2.guild_id = :guild_id
              AND ua2.completed = TRUE) as members_completed
         FROM achievements a
-        LEFT JOIN achievement_tiers t ON t.achievement_id = a.id AND t.tier_level = 1
         LEFT JOIN user_achievements ua ON a.id = ua.base_achievement_id 
             AND ua.guild_id = :guild_id
             AND ua.user_id = :user_id
@@ -562,7 +560,27 @@ def get_guild_achievements(guild_id):
         'guild_id': guild_id,
         'user_id': current_user.discord_id
     }).fetchall()
-    
+
+    # Fetch all tiers for achievements in this guild
+    tiers_by_achievement = {}
+    tiers = db.session.execute(text('''
+        SELECT achievement_id, tier_level, title, requirement_value, reward_xp, reward_role_id, icon_path
+        FROM achievement_tiers
+        WHERE achievement_id IN (
+            SELECT id FROM achievements WHERE guild_id = :guild_id
+        )
+        ORDER BY achievement_id, tier_level
+    '''), {'guild_id': guild_id}).fetchall()
+    for tier in tiers:
+        tiers_by_achievement.setdefault(tier.achievement_id, []).append({
+            "tier_level": tier.tier_level,
+            "title": tier.title,
+            "requirement_value": tier.requirement_value,
+            "reward_xp": tier.reward_xp,
+            "reward_role_id": tier.reward_role_id,
+            "icon_path": tier.icon_path
+        })
+
     # Format achievements for the frontend
     formatted_achievements = []
     for achievement in achievements:
@@ -573,7 +591,7 @@ def get_guild_achievements(guild_id):
             "category": achievement.requirement_type,
             "icon": achievement.icon_path or "medal",
             "progress": 0,
-            "requirement": achievement.requirement_value,
+            "tiers": tiers_by_achievement.get(achievement.id, []),
             "completed": achievement.completed,
             "last_tier_achieved_at": achievement.last_tier_achieved_at.isoformat() if achievement.last_tier_achieved_at else None,
             "members_completed": achievement.members_completed or 0,
