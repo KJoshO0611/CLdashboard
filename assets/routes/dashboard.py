@@ -113,17 +113,27 @@ def guild_leaderboard(guild_id):
         flash('Guild not found.', 'error')
         return redirect(url_for('dashboard.guild_list'))
     
-    # Get leaderboard data from API
+    # Pagination parameters from query string
+    page = request.args.get('page', default=1, type=int)
+    page_size = request.args.get('page_size', default=25, type=int)
+    api_params = {'page': page, 'page_size': page_size}
+
+    # Get leaderboard data from API with pagination
     response = requests.get(f"{request.host_url}api/guilds/{guild_id}/leaderboard", 
+                            params=api_params,
                             cookies=request.cookies)
     if response.status_code == 200:
-        leaderboard_data = response.json()['data']
+        api_data = response.json()['data']
+        leaderboard_data = api_data.get('leaderboard', [])
+        pagination = api_data.get('pagination', {})
     else:
         leaderboard_data = []
+        pagination = {'page': page, 'page_size': page_size, 'total_pages': 1, 'total_users': 0}
     
     return render_template('dashboard/guild_leaderboard.html', 
                          guild=guild,
-                         leaderboard=leaderboard_data)
+                         leaderboard=leaderboard_data,
+                         pagination=pagination)
 
 @dashboard.route('/guilds/<guild_id>/achievements')
 @login_required
