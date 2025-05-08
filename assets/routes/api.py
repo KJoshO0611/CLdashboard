@@ -794,10 +794,13 @@ def get_guild_events(guild_id):
             "CANCELLED": "danger",
         }
         formatted_events = []
+        # Batch fetch participant counts for all event_ids in this guild
+        event_ids = [event.event_id for event in events]
+        participant_counts = {row.event_id: row.count for row in db.session.query(EventAttendance.event_id, func.count().label('count')).filter(EventAttendance.event_id.in_(event_ids), EventAttendance.guild_id == guild_id).group_by(EventAttendance.event_id).all()}
         for event in events:
             start_dt = datetime.fromtimestamp(event.start_time)
             end_dt = datetime.fromtimestamp(event.end_time) if event.end_time else None
-            participant_count = db.session.query(func.count()).select_from(EventAttendance).filter_by(event_id=event.event_id, guild_id=guild_id).scalar()
+            participant_count = participant_counts.get(event.event_id, 0)
             formatted_events.append({
                 "internal_id": event.internal_id,
                 "event_id": event.event_id,
@@ -811,7 +814,7 @@ def get_guild_events(guild_id):
                 "type": event.event_type.lower() if event.event_type else "other",
                 "status": event.status,
                 "status_color": status_color_map.get(event.status, "secondary"),
-                "participants": participant_count or 0,
+                "participants": participant_count,
                 "creator_id": event.creator_id,
             })
         
@@ -852,10 +855,13 @@ def get_guild_events(guild_id):
             "CANCELLED": "danger",
         }
         formatted_events = []
+        # Batch fetch participant counts for all event_ids in this guild
+        event_ids = [event.event_id for event in events]
+        participant_counts = {row.event_id: row.count for row in db.session.query(EventAttendance.event_id, func.count().label('count')).filter(EventAttendance.event_id.in_(event_ids), EventAttendance.guild_id == guild_id).group_by(EventAttendance.event_id).all()}
         for event in events:
             start_dt = datetime.fromtimestamp(event.start_time)
             end_dt = datetime.fromtimestamp(event.end_time) if event.end_time else None
-            participant_count = db.session.query(func.count()).select_from(EventAttendance).filter_by(event_id=event.event_id, guild_id=guild_id).scalar()
+            participant_count = participant_counts.get(event.event_id, 0)
             formatted_events.append({
                 "internal_id": event.internal_id,
                 "event_id": event.event_id,
@@ -869,7 +875,7 @@ def get_guild_events(guild_id):
                 "type": event.event_type.lower() if event.event_type else "other",
                 "status": event.status,
                 "status_color": status_color_map.get(event.status, "secondary"),
-                "participants": participant_count or 0,
+                "participants": participant_count,
                 "creator_id": event.creator_id,
             })
         
