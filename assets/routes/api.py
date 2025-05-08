@@ -356,9 +356,24 @@ def get_guild_leaderboard(guild_id):
         return api_error("You do not have permission to view this guild", 403)
     
     try:
-        # Fetch necessary data from DB, limit to potential top users
-        # Order by level/xp as a pre-filter, we will re-sort later by cumulative XP
-        query_text = '''
+        # Pagination parameters
+        page = request.args.get('page', default=1, type=int)
+        page_size = request.args.get('page_size', default=25, type=int)
+        if page < 1:
+            page = 1
+        if page_size < 1 or page_size > 100:
+            page_size = 25
+        offset = (page - 1) * page_size
+
+        # Get total user count for pagination
+        total_users = db.session.execute(
+            text("SELECT COUNT(*) FROM levels WHERE guild_id = :guild_id"),
+            {'guild_id': guild_id}
+        ).scalar() or 0
+        total_pages = (total_users + page_size - 1) // page_size
+
+        # Fetch paginated leaderboard data
+        query_text = f'''
             SELECT 
                 u.discord_id, 
                 u.username, 
@@ -368,14 +383,12 @@ def get_guild_leaderboard(guild_id):
             FROM levels lvl
             JOIN users u ON lvl.user_id = u.discord_id
             WHERE lvl.guild_id = :guild_id
-            ORDER BY lvl.level DESC, lvl.xp DESC -- Pre-sort to get likely top candidates
-            LIMIT 100 -- Fetch top 100 based on pre-sort
+            ORDER BY lvl.level DESC, lvl.xp DESC
+            LIMIT :limit OFFSET :offset
         '''
-        
-        params = {'guild_id': guild_id}
-        
+        params = {'guild_id': guild_id, 'limit': page_size, 'offset': offset}
         leaderboard_raw = db.session.execute(text(query_text), params).fetchall()
-        
+
         # Calculate cumulative XP and store in a list of dicts
         leaderboard_processed = []
         for user_data in leaderboard_raw:
@@ -388,24 +401,30 @@ def get_guild_leaderboard(guild_id):
                 "xp": user_data.xp, # Keep current level XP if needed
                 "cumulative_xp": cumulative_xp
             })
-            
-        # Sort the processed list by cumulative XP
-        leaderboard_sorted = sorted(leaderboard_processed, key=lambda x: x['cumulative_xp'], reverse=True)
-        
-        # Format final data with ranks based on the sorted list
+        # No need to re-sort; SQL already sorts by level/xp. Just enumerate for rank.
         formatted_leaderboard = [
             {
-                "rank": idx + 1,
+                "rank": offset + idx + 1,
                 "user_id": user['user_id'],
                 "username": user['username'],
                 "avatar": user['avatar'],
                 "level": user['level'],
-                "xp": int(user['cumulative_xp']) # Cast cumulative XP to int here
+                "xp": int(user['cumulative_xp'])
             }
-            for idx, user in enumerate(leaderboard_sorted)
+            for idx, user in enumerate(leaderboard_processed)
         ]
-        
-        return api_success(formatted_leaderboard)
+
+        # Return with pagination metadata
+        response = {
+            "leaderboard": formatted_leaderboard,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total_users": total_users,
+                "total_pages": total_pages
+            }
+        }
+        return api_success(response)
     except Exception as e:
         # Log the detailed error
         print(f"Error fetching leaderboard for guild {guild_id}: {e}")
@@ -593,12 +612,37 @@ def get_guild_achievements(guild_id):
             "progress": 0,
             "tiers": tiers_by_achievement.get(achievement.id, []),
             "completed": achievement.completed,
-            "last_tier_achieved_at": achievement.last_tier_achieved_at.isoformat() if achievement.last_tier_achieved_at else None,
+            # Robust datetime handling for last_tier_achieved_at
+            "last_tier_achieved_at": None if not achievement.last_tier_achieved_at else _format_datetime(achievement.last_tier_achieved_at),
             "members_completed": achievement.members_completed or 0,
             "member_count": member_count # Use the count fetched from levels
         })
     
     return api_success(formatted_achievements)
+
+
+def _format_datetime(dt):
+    """Ensure dt is a timezone-aware datetime and return ISO string (UTC if naive)."""
+    import datetime as _dt
+    if isinstance(dt, str):
+        try:
+            # Try parsing with timezone info
+            val = _dt.datetime.fromisoformat(dt)
+        except Exception:
+            try:
+                # Fallback for other formats
+                val = _dt.datetime.strptime(dt, "%Y-%m-%d %H:%M:%S")
+            except Exception:
+                return dt
+    else:
+        val = dt
+    # If still not a datetime, return as-is
+    if not isinstance(val, _dt.datetime):
+        return str(val)
+    # If naive, localize to UTC
+    if val.tzinfo is None or val.tzinfo.utcoffset(val) is None:
+        val = val.replace(tzinfo=_dt.timezone.utc)
+    return val.isoformat()
 
 @api.route('/api/guilds/<string:guild_id>/achievements', methods=['POST'])
 @login_required
@@ -742,27 +786,34 @@ def get_guild_events(guild_id):
         events = query.limit(20).all() # Limit results for now
         
         # Format events for frontend
+        from sqlalchemy import func
+        status_color_map = {
+            "SCHEDULED": "primary",
+            "ACTIVE": "success",
+            "COMPLETED": "secondary",
+            "CANCELLED": "danger",
+        }
         formatted_events = []
         for event in events:
-             # Convert timestamps to readable strings (adjust format as needed)
-             start_dt = datetime.fromtimestamp(event.start_time)
-             end_dt = datetime.fromtimestamp(event.end_time) if event.end_time else None
-             
-             formatted_events.append({
-                 "internal_id": event.internal_id,
-                 "event_id": event.event_id,
-                 "name": event.name,
-                 "description": event.description,
-                 "start_time_iso": start_dt.isoformat(),
-                 "end_time_iso": end_dt.isoformat() if end_dt else None,
-                 "start_time_formatted": start_dt.strftime("%b %d, %Y %I:%M %p UTC"), # Example format
-                 "end_time_formatted": end_dt.strftime("%b %d, %Y %I:%M %p UTC") if end_dt else "-",
-                 "event_type": event.event_type,
-                 "status": event.status,
-                 "creator_id": event.creator_id,
-                 # Add location/URL data if needed later from your schema
-                 # Add attendee/interested count if needed later
-             })
+            start_dt = datetime.fromtimestamp(event.start_time)
+            end_dt = datetime.fromtimestamp(event.end_time) if event.end_time else None
+            participant_count = db.session.query(func.count()).select_from(EventAttendance).filter_by(event_id=event.event_id, guild_id=guild_id).scalar()
+            formatted_events.append({
+                "internal_id": event.internal_id,
+                "event_id": event.event_id,
+                "name": event.name,
+                "description": event.description,
+                "start_time_iso": start_dt.isoformat(),
+                "end_time_iso": end_dt.isoformat() if end_dt else None,
+                "start_time_formatted": start_dt.strftime("%b %d, %Y %I:%M %p UTC"),
+                "end_time_formatted": end_dt.strftime("%b %d, %Y %I:%M %p UTC") if end_dt else "-",
+                "event_type": event.event_type,
+                "type": event.event_type.lower() if event.event_type else "other",
+                "status": event.status,
+                "status_color": status_color_map.get(event.status, "secondary"),
+                "participants": participant_count or 0,
+                "creator_id": event.creator_id,
+            })
         
         return api_success(formatted_events)
         
@@ -793,27 +844,34 @@ def get_guild_events(guild_id):
         events = query.limit(20).all() # Limit results for now
         
         # Format events for frontend
+        from sqlalchemy import func
+        status_color_map = {
+            "SCHEDULED": "primary",
+            "ACTIVE": "success",
+            "COMPLETED": "secondary",
+            "CANCELLED": "danger",
+        }
         formatted_events = []
         for event in events:
-             # Convert timestamps to readable strings (adjust format as needed)
-             start_dt = datetime.fromtimestamp(event.start_time)
-             end_dt = datetime.fromtimestamp(event.end_time) if event.end_time else None
-             
-             formatted_events.append({
-                 "internal_id": event.internal_id,
-                 "event_id": event.event_id,
-                 "name": event.name,
-                 "description": event.description,
-                 "start_time_iso": start_dt.isoformat(),
-                 "end_time_iso": end_dt.isoformat() if end_dt else None,
-                 "start_time_formatted": start_dt.strftime("%b %d, %Y %I:%M %p UTC"), # Example format
-                 "end_time_formatted": end_dt.strftime("%b %d, %Y %I:%M %p UTC") if end_dt else "-",
-                 "event_type": event.event_type,
-                 "status": event.status,
-                 "creator_id": event.creator_id,
-                 # Add location/URL data if needed later from your schema
-                 # Add attendee/interested count if needed later
-             })
+            start_dt = datetime.fromtimestamp(event.start_time)
+            end_dt = datetime.fromtimestamp(event.end_time) if event.end_time else None
+            participant_count = db.session.query(func.count()).select_from(EventAttendance).filter_by(event_id=event.event_id, guild_id=guild_id).scalar()
+            formatted_events.append({
+                "internal_id": event.internal_id,
+                "event_id": event.event_id,
+                "name": event.name,
+                "description": event.description,
+                "start_time_iso": start_dt.isoformat(),
+                "end_time_iso": end_dt.isoformat() if end_dt else None,
+                "start_time_formatted": start_dt.strftime("%b %d, %Y %I:%M %p UTC"),
+                "end_time_formatted": end_dt.strftime("%b %d, %Y %I:%M %p UTC") if end_dt else "-",
+                "event_type": event.event_type,
+                "type": event.event_type.lower() if event.event_type else "other",
+                "status": event.status,
+                "status_color": status_color_map.get(event.status, "secondary"),
+                "participants": participant_count or 0,
+                "creator_id": event.creator_id,
+            })
         
         return api_success(formatted_events)
         

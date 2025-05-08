@@ -75,10 +75,10 @@
                             <h5 class="card-title mb-1">{{ event.name }}</h5>
                             <div class="d-flex align-items-center text-muted">
                                 <i class="fas fa-calendar-alt me-2"></i>
-                                <span>{{ event.start_time|datetime }}</span>
-                                {% if event.end_time %}
+                                <span>{{ event.start_time_formatted }}</span>
+                                {% if event.end_time_formatted and event.end_time_formatted != '-' %}
                                 <span class="mx-2">-</span>
-                                <span>{{ event.end_time|datetime }}</span>
+                                <span>{{ event.end_time_formatted }}</span>
                                 {% endif %}
                             </div>
                         </div>
